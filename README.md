@@ -16,18 +16,18 @@ We are training ML algorithms to infer the breeding success of shorebirds that w
 
 1. Create machine learning algorithm to predict the behavioral state from tracking data alone
 Steps:
-  - Train a randomForest and Hidden Markov model
-  - Use trained models to predict behavioral states through all GPS tracks
-  - Calculate performance metrics (options)
-    - Out of bag (default for rf, done in model stage)
-    - Leave-one-out cross validation (done on predictions)
-    - Proportion agreement cross validation (done on predictions)
+   - Train a randomForest and Hidden Markov model
+   - Use trained models to predict behavioral states through all GPS tracks
+   - Calculate performance metrics (options)
+     - Out of bag (default for rf, done in model stage)
+     - Leave-one-out cross validation (done on predictions)
+     - Proportion agreement cross validation (done on predictions)
 2.Run Bayesian Cormack-Jolly-Seber models to estimate probability of hatching and probability of fledging, separately (however, nest failure = chick tending failure by default)
 Steps:
-  - Build state and space matrices
-    - state – whether focal behavior was observed for each day
-      - either NA/1 for not incubating/incubating  
-        - need a persistence check (i.e., if x>4 hrs, then 1, if x<4 then NA) (binary)
+   - Build state and space matrices
+     - state – whether focal behavior was observed for each day
+       - either NA/1 for not incubating/incubating  
+         - need a persistence check (i.e., if x>4 hrs, then 1, if x<4 then NA) (binary)
       ii.or # of hours that a bird showed incubating behavior (scalar)
       iii.in either case, requires birds with full nesting season observed in the data
     b.space – whether the tag collected data on a given dayi.the number of GPS fixes per day (scalar)
