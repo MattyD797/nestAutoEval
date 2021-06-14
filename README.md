@@ -54,7 +54,7 @@ This is to estimate probability of hatching and probability of fledging. Note: n
    - *Charidriformes* (all shorebirds)
    - All Precocial Birds (geese, ducks, turkey)
 2. [ ] Pick the number of species from each group or choose example species
-3. [ ] Minimum sample sie per species ?
+3. [ ] Minimum sample size per species ?
 4. [ ] BIG QUESTION: How to measure accuracy?
 5. [ ] Feeler in Artic Shorebird Demographic Network
    - Movement Tracks
