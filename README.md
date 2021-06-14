@@ -56,7 +56,7 @@ This is to estimate probability of hatching and probability of fledging. Note: n
 2. [ ] Pick the number of species from each group or choose example species
 3. [ ] Minimum sample size per species ?
 4. [ ] BIG QUESTION: How to measure accuracy?
-5. [ ] Feeler in Artic Shorebird Demographic Network
+5. [ ] Feeler in Arctic Shorebird Demographic Network
    - Movement Tracks
    - Nest Fate
    - Fledgling Fate
