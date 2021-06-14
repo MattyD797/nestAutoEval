@@ -1,5 +1,5 @@
 # Using movement tracks to infer successful breeding of a precocial bird with machine learning
-<p style = "text-align: center;"> Authors: Luke Wilde and Matthew Duggan </p>
+<p style="text-align: center;">Authors: Luke Wilde and Matthew Duggan </p>
 
 
 ## Introduction
