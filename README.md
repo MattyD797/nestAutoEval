@@ -1,13 +1,14 @@
 # Using movement tracks to infer successful breeding of a precocial bird with machine learning
-Authors: Luke Wilde and Matthew Duggan
+<p style = "text-align: center;"> Authors: Luke Wilde and Matthew Duggan </p>
 
 
 ## Introduction
 
-&nbsp;&nbsp;&nbsp;&nbsp; We are training hidden Markov models (HMMs) and random forests (RFs) to infer the breeding success of a threatened shorebird, *Limosa limosa* (hereby, known as godwits), with geospatial data. The challenges with geospatial data include a variable error rate in predicted location, limited covariate data to "teach" a model, and other commmon adversities when analyzing large data sets, including missing and inconsistent data. In addition, a limited amount of research has been conducted at automating the evaluation of precocial nesting behavior. Precocial means hatchlings are almost fully independent once hatched where they forage for food themselves under the protection of the parents. <br/>
-&nbsp;&nbsp;&nbsp;&nbsp;The goal of this repository is to build an autonomous framework and methodology in evaluating shorebird nesting behavior. The benefits of such a study would open the opportunity to evaluate survival probability of chicks and fitness of individuals. We hope this study leads to more focused conservation management and increases the reach of future shorebird studies. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; We are training hidden Markov models (HMMs) and random forests (RFs) to infer the breeding success of a threatened shorebird, *Limosa limosa* (hereby, known as godwits), with geospatial data. The challenges with geospatial data include a variable error rate in predicted location, limited covariate data to "teach" a model, and other commmon adversities when analyzing large data sets, including missing and inconsistent data. In addition, a limited amount of research has been conducted at automating the evaluation of precocial nesting behavior. Precocial means hatchlings are almost fully independent once hatched where they forage for food themselves under the protection of the parents. <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The goal of this repository is to build an autonomous framework and methodology in evaluating shorebird nesting behavior. The benefits of such a study would open the opportunity to evaluate survival probability of chicks and fitness of individuals. We hope this study leads to more focused conservation management and increases the reach of future shorebird studies. 
 
 ## Methods
+
 
 
 
