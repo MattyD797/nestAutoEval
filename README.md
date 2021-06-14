@@ -28,17 +28,17 @@ Steps:
      - state – whether focal behavior was observed for each day
        - either NA/1 for not incubating/incubating  
          - need a persistence check (i.e., if x>4 hrs, then 1, if x<4 then NA) (binary)
-      ii.or # of hours that a bird showed incubating behavior (scalar)
-      iii.in either case, requires birds with full nesting season observed in the data
-    b.space – whether the tag collected data on a given dayi.the number of GPS fixes per day (scalar)
-  2.Process matrices with # days in incubation cyclea.need a function 
-  3.Run model
-    a.user must choose among constant and time-varying survival, detection, or survival+detection.
-    b.requires mcmc_params – to set the n.chains, n.iter, burnin, and adapt. values
-  4.Assess Markov Chain Monte Carlo diagnostics (coda package)
-  5.Plot both survival and detection process
-    a.here we want a probability of successful hatching or fledging (as %)
-  6.Calculate performance metrics from reproductive outcome
-    a.Accuracy, Recall, Sensitivity, Specificity, F1
+       - or # of hours that a bird showed incubating behavior (scalar)
+       - in either case, requires birds with full nesting season observed in the data
+     - space – whether the tag collected data on a given dayi.the number of GPS fixes per day (scalar)
+   - Process matrices with # days in incubation cyclea.need a function 
+   - Run model
+     - user must choose among constant and time-varying survival, detection, or survival+detection.
+     - requires mcmc_params – to set the n.chains, n.iter, burnin, and adapt. values
+   - Assess Markov Chain Monte Carlo diagnostics (coda package)
+   - Plot both survival and detection process
+     - here we want a probability of successful hatching or fledging (as %)
+   - Calculate performance metrics from reproductive outcome
+     - Accuracy, Recall, Sensitivity, Specificity, F1
   
   
