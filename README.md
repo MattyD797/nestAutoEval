@@ -10,9 +10,9 @@
 ## Methods
 
 ### Create Random Forest Model
-1. [ ] Make Random Forest 
-2. [ ] Calculate Accuracy
-3. [ ] Calculate Out of Bag Error
+1. [X] Make Random Forest 
+2. [X] Calculate Accuracy
+3. [X] Calculate Out of Bag Error
 
 ### Create Hidden Markov Model
 1. [ ] Make HMM
@@ -22,18 +22,35 @@
 ### Run a Bayesian Cormack-Jolly-Seber model 
 This is to estimate probability of hatching and probability of fledging. Note: nest failure = chick tending failure by default.
 1. [ ] Build state and space matrices
-   - State: the number of hours that a bird showed incubating behavior
+   - State: the number of hours that a bird showed incubating behavior (LOOKING AT THESE, I THINK ITS JUST INSTANCES IN A DAY, BUT I DONT THINK THAT MATTERS MUCH ON THE RESULTS)
    - Space: the number of GPS fixes per day
-   - requires full nesting behavior = 4 birds
+   - requires full nesting behavior or depredated = 4 complete, 1 failed for 5 total (GPS).
 2. [ ] Process matrices with number of days in incubation
    - need a function
 3. [ ] Run model
-4. [ ] Assess Markov Chain Monte Carlo diagnostics
+4. [X] Assess Markov Chain Monte Carlo diagnostics
    - coda package
-5. [ ] Plot survival and detection process
+5. [X] Plot survival and detection process
    - probability of successful hatching 
 6. [ ] Calculate performance metrics from reproductive outcome
    - Accuracy, Recall, Sensitivity, Specificity, F1
+
+### Penthouse matrices to improve upon the above method
+This achieves the same end, but should perform better as it will allow the MCMC sampling to estimate Pr(survival) at a specified elapsed-time: for nesting 24 d and for chick tending 28 days. 
+1. [ ] Identify the season range for each model
+   - use the matrices you built in the last section
+   - have user specify the start and end date (POSIXct) to be considered. Build part of the function
+   - trim the 365 day matrices down to what is specified 
+2. [ ] Within the specified window, find first instance of consistent behavior (incubation or chick tending)
+   - need a persistence check: that is, where did a bird first exhibit 4 days in a row with some instances of a given behavior
+   - user needs to be able to specify the number of days
+3. [ ] Define the histories from the first entry from the first consistent behavior period until specified number of days 
+   - user needs to be able to specify number of days, again: in BTGO its 22-24 d of incubation and 28-34 d of chick tending.
+   - this way, each row (individual history) of the nest.beh.final should start with the first day a bird was observed incubating and proceed for 24 days
+4. [ ] Ensure that the observation matrix (i.e., nest.beh.final) samples the same columns and thus has EXACTLY the same dimensions as the state matrix (i.e., nest.beh.final)
+5. I envisino the function looking like: state_matrix <- function(full_matrix, start_season_date, end_season_date, num_days_incub){} where the full_matrix is what we already have (nest.beh.final), the start_season_date, end_season_date terms filter the columns down so that only the breeding season is considered, and then the num_days_incub specifies how many columns from the first the matrix must be wide.
+6. In the end, the matrix will have each row for an indiv., each column for the number of days in an incubation att or chick-tending period, the first cell cannot be 0, and each preceeding cell in a row is the sum of predicted incubating states or GPS fixes on a given day (can be 0 or >=1) 
+
 
 ### Argos Birds
 1. [ ] Label birds using Tableau
