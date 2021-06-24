@@ -13,6 +13,16 @@
 | :---------: | :------------: | :---------: | :------: | :-------: | :----------: | :-------: |
 | Placeholder |       -1       |      1      |     2    |     3     |      4       |      5    |
 
+## Variables of Interest
+
+#### Primary
+
+1) Step length 2)Turning Angle 3)Distance to water 4)Revisit 5)Residence Time
+
+#### Secondary
+
+1)Days since arrival 2)Days before departure 3)Sliding window of variance 4)Standard deviation (to capture autocorrelation)
+
 ## Methods
 
 ### Create Random Forest Model
