@@ -17,11 +17,11 @@
 
 #### Primary
 
-1) Step length 2)Turning Angle 3)Distance to water 4)Revisit 5)Residence Time
+1) Step length 2) Turning Angle 3) Distance to water 4) Revisit 5)Residence Time
 
 #### Secondary
 
-1)Days since arrival 2)Days before departure 3)Sliding window of variance 4)Standard deviation (to capture autocorrelation)
+1) Days since arrival 2) Days before departure 3) Sliding window of variance 4) Standard deviation (to capture autocorrelation)
 
 ## Methods
 
