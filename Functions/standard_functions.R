@@ -32,8 +32,8 @@
       bind_rows() %>% 
       rename("ID" = 1,
              "time" = 2, 
-             "lon" = 3, 
-             "lat" = 4, 
+             "lat" = 3, 
+             "lon" = 4, 
              "temp" = 5) %>% 
       na.omit()
     
@@ -53,6 +53,15 @@
           b = as.numeric(b)
         ) %>% 
         suppressWarnings()
+    }
+    
+  #Take in all tracks and subset by lat and lon or utm of the nesting area
+  ##Input: dataframe of tracks
+    defNestArea<- function(x, minLat, minLon){
+      x <- x %>% 
+            filter(lat > minLat, 
+                    lon > minLon)
+      return(x)
     }
   
 #Convert longlat coordinates to utm or visversa
