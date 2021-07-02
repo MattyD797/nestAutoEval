@@ -1,95 +1,37 @@
-# Date April 7 2021 
-# Author Luke Wilde
-#Script to build random forest model on GPS tagged BTGO to discern nesting from non-nesting
+#1. setup packages and environment
 
-#variables of interest are: step length, turning angle, distance to water, revisit, residence Time, 
-#other variables could be: days since arrival, days before departure, sliding window of variance, standard deviation (to capture autocorrelation)
-
-# -1 = no observation
-# 1 = incubating
-# 2 = foraging 
-# 3 = dead bird
-# 4 = chick tending
-# 5 = migrating
-
-
-
-#create function to load and install (missing) packages
-
-#remove all objects, clean environment
+#clean environment
 rm(list=ls(all=TRUE))
 
-#install.packages("m2b")
-foo <- function(x){
-  for( i in x ){
-    #  require returns TRUE invisibly if it was able to load package
-    if( ! require( i , character.only = TRUE ) ){
-      #  If package was not able to be loaded then re-install
-      install.packages( i , dependencies = TRUE )
-      #  Load package after installing
-      require( i , character.only = TRUE )
-    }
-  }
-}
+#load constants and functions
+source("Functions/standard_functions.R")
+source("Constants/file_locations.R")
 
-foo(c("randomForest", "m2b", "moveHMM", "momentuHMM", "dplyr","tidyverse", "caret","mlbench", "nestR", "coda", "jagsUI", "R2jags", "runjags", "rjags"))
-
-options(max.print = 999)
-
-as.POSIXct(Sys.time(), origin = "1970-01-01")
-
-files <- list.files("./nestData/"); files
-myfiles <- lapply(paste0("./nestData/",files[1:25]), read.csv)
-
-####train RF model####
-data <- do.call('rbind',  myfiles[1:length(myfiles)])
-str(data)
-data_1 <- data[,c(4,3,6,5,1)]; str(data_1); head(data_1)
-
-names(data_1)[1] <- "x"
-names(data_1)[2] <- "y"
-names(data_1)[3] <- "t"
-names(data_1)[4] <- "b"
-names(data_1)[5] <- "id"
-
-str(data_1)
-head(data_1);tail(data_1)
-
-data_1$x <- as.numeric(data_1$x)
-data_1$y <- -1*as.numeric(data_1$y)
-data_1$b <- as.character(data_1$b)
-data_1$id <- as.character(data_1$id)
-data_1$t <- parse_date_time(data_1$t, c("%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M"))
-data_1$t <- as.POSIXct(data_1$t, format = "%m/%d/%Y %H:%M", origin = "1970-01-01", tz = "GMT") #has issues with 12,7,8,9,10 - something with time format
-str(data_1); head(data_1); tail(data_1)
-unique(data_1$id)
-
-data_1 <- data_1[complete.cases(data_1),]
-
-unique(data_1$id)
-#make two stage
-data_1$b[data_1$b==5] <- -1
-data_1$b[data_1$b==3] <- -1 #& data_1$b<5
-
-data_1 <- data_1[!duplicated(data_1$t),] 
-
-#track_CAGA_005 is the example data set included in the package
-str(data_1)
-
-# data_1$t <- as.POSIXct(data_1$t, format = "%m/%d/%Y %H:%M:%S", origin = "1970-01-01")
-
-#build the xytb object
-xytb <- xytb(data_1, desc="BTGO Birds",winsize=seq(3,15,2), idquant=seq(0,1,.25),move=c(5,10,15))
-#ex <- xytb(track_CAGA_005, desc="BTGO Birds",winsize=seq(3,15,2), idquant=seq(0,1,.25))
+#load in packages
+setUp(c("randomForest", 
+        "m2b", 
+        "moveHMM", 
+        "momentuHMM", 
+        "dplyr",
+        "tidyverse", 
+        "caret",
+        "mlbench", 
+        "nestR", 
+        "coda", 
+        "jagsUI", 
+        "R2jags", 
+        "runjags", 
+        "rjags"))
 
 
-#xytb<-xytb(track_CAGA_005,desc="example track",winsize=seq(3,15,2),idquant=seq(0,1,.25),move=c(5,10,15))
-#xytb@befdxyt
-#preview, color coded
-#plot(xytb)
+#2. Load in Data
 
-#model with random forest
+tracks <- readTracks(predicted_tracks) 
 
+#3. Create a xytb object from loaded tracks
+xytb <- tracks2xytb(tracks, desc="BTGO Birds", winsize=seq(3,15,2), idquant=seq(0,1,.25),move=c(5,10,15))
+
+#4. model with random forest
 chick_rf <- modelRF(xytb, type = "actual", nob = "-1", ntree = 3201, mtry = 40) 
 
 

@@ -34,7 +34,7 @@
              "time" = 2, 
              "lat" = 3, 
              "lon" = 4, 
-             "temp" = 5) %>% 
+             "b" = 5) %>% 
       na.omit()
     
     return(myfiles)
@@ -43,7 +43,7 @@
   #Read individual track and modify to prepare for binding with rest of data
   ##Input: csv of individual bird track
     get.csv <- function(df){
-      read.csv(df) %>%
+      track <- read.csv(df) %>%
         dplyr::select(-last_col()) %>%
         mutate(
           ID = as.character(ID),
@@ -53,6 +53,8 @@
           b = as.numeric(b)
         ) %>% 
         suppressWarnings()
+      
+      return(track[!duplicated(track$date_time),])
     }
     
   #Take in all tracks and subset by lat and lon or utm of the nesting area
@@ -90,7 +92,21 @@
     return(df)
   }
 
-
-
+#Create a xytb object from the imported tracks
+#Input from read tracks with proper labels(id, t, x, y, b)
+  tracks2xytb <- function(tracks, desc, winsize, idquant, move){
+    tracks <- tracks %>% 
+                rename(id = ID, 
+                        x = lon,
+                        y= lat, 
+                        t = time) %>% 
+                mutate(id = as.character(id),
+                       x = as.numeric(x),
+                       y = as.numeric(y),
+                       b = as.character(b),
+                       t = as.POSIXct(t)) %>% 
+      xytb(desc, winsize, idquant, move)
+    return(tracks)
+  }
   
   
