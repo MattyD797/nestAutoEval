@@ -1,4 +1,4 @@
-#1. setup packages and environment
+# 1. setup packages and environment ---------------------------------------
 
 #clean environment
 rm(list=ls(all=TRUE))
@@ -21,121 +21,48 @@ setUp(c("randomForest",
         "jagsUI", 
         "R2jags", 
         "runjags", 
-        "rjags"))
+        "rjags", 
+        "tidymodels"))
 
 
-#2. Load in Data
+# 2. Load in Data for training -----------------------------------------------
 
-tracks <- readTracks(predicted_tracks) 
+tracks <- readTracks(predicted_tracks)
 
-#3. Create a xytb object from loaded tracks
-xytb <- tracks2xytb(tracks, desc="BTGO Birds", winsize=seq(3,15,2), idquant=seq(0,1,.25),move=c(5,10,15))
+#xytb thinks birds are connected. Ran independently and combined later
+tracks_split <- tracks %>% 
+                  group_split(ID)
 
-#4. model with random forest
-chick_rf <- modelRF(xytb, type = "actual", nob = "-1", ntree = 3201, mtry = 40) 
+# 3. Create a xytb object for each track ------------------------------
+
+xytbs <- lapply(tracks_split, tracks2xytb, desc="BTGO Birds", winsize=seq(3,15,2), idquant=seq(0,1,.25),move=c(5,10,15))
 
 
+# 4. Combine xytb objects -------------------------------------------------
+
+xytb <- bindXytbs(xytbs, tracks)
+
+# 4. Train Model ----------------------------------------------------------
+
+chick_rf <- modelRF(xytb, type = "actual", rfcv = TRUE, nob = "-1", colin = FALSE) 
 
 resRF(chick_rf) #to view the out of bag error limit
 resRF(chick_rf, "importance") # importance of individual variables
 resRF(chick_rf,"confusion") # view the confusion matrix and the statistics by each class
 
-#behavioral states as predicted, vs the one observed - compared in time
-#resB(chick_rf, nob="-1") 
+# 5. Extract predictions --------------------------------------------------
 
-# and then viewed in space
-#resB(chick_rf, nob="-1", "space") 
+predictions <- getPredictions(chick_rf)
 
-# finally density - isnt working
-#resB(chick_rf,"density", nob="-1") 
+# 6. Get the Julian Data -----------------------------------------------------
 
-# need to export and predict from trained model (above) on new data for which we have annotations. Testing the model.
-predicted_full <- chick_rf@predb
+predictions <- predictions %>% 
+                add_column(as.numeric(format(predictions$t, "%j"))) %>% 
+                rename(Julian = 4)
 
 
 
 
-# to extract the model and make predictions without the need to merge birds together
-
-
-#call test data, using similar to above
-test.data <- do.call('rbind',  myfiles[c(7,8,17,18,21)]) #birds with entire tracks
-
-#process as before, convert to xytb object
-str(test.data)
-test.data_1 <- test.data[,c(4,3,6,5,1)]; str(test.data_1); head(test.data_1)
-
-names(test.data_1)[1] <- "x"
-names(test.data_1)[2] <- "y"
-names(test.data_1)[3] <- "t"
-names(test.data_1)[4] <- "b"
-names(test.data_1)[5] <- "id"
-
-str(test.data_1)
-head(test.data_1);tail(test.data_1)
-
-test.data_1$x <- as.numeric(test.data_1$x)
-test.data_1$y <- -1*as.numeric(test.data_1$y)
-test.data_1$b <- -1
-test.data_1$b <- as.character(test.data_1$b)
-test.data_1$id <- as.character(test.data_1$id)
-test.data_1$t <- as.POSIXct(test.data_1$t, format = "%m/%d/%Y %H:%M", origin = "1970-01-01") #for some reason, the t column lost the seconds
-
-str(test.data_1); head(test.data_1); tail(test.data_1)
-unique(test.data_1$id)
-
-test.data_1 <- test.data_1[complete.cases(test.data_1),]
-
-test.data_1 <- test.data_1[!duplicated(test.data_1$t),] 
-
-
-xytb.test <- xytb(test.data_1, desc="BTGO Birds",winsize=seq(3,15,2), idquant=seq(0,1,.25),move=c(5,10,15))
-
-xytb.test@befdxyt
-
-xytb.test.pred <- cbind(xytb.test@b,xytb.test@dxyt,stringsAsFactors=F)
-xytb.test.pred$t
-
-chick_modRF <- extractRF(chick_rf)
-
-xytb.test.pred <- na.omit(xytb.test.pred)
-
-predictions_exported <- predict(chick_modRF, newdata = xytb.test.pred)
-
-predictions_exported_df <- as.data.frame(predictions_exported)
-time <- as.data.frame(xytb.test.pred$t) 
-animal <- as.data.frame(xytb.test.pred$id)
-
-predictions <- cbind("id"=animal,"t"=time,"b"=predictions_exported_df, stringsAsFactors=F)
-predictions$`xytb.test.pred$t`
-
-predictions <- data.frame("id" = predictions$`xytb.test.pred$id`, "t"= predictions$`xytb.test.pred$t`,"b" = predictions$predictions_exported)
-
-#class(xytb.test@dxyt)
-
-
-### TO DO ###
-#2. need to look at what is going on with the last_day math
-#3. calculate days between first and last? i.e. incubation period or fledging period
-#4. calculate probability of survival since start - in nesting 22–24 days, in chick tending 28-34 days (Cite: https://doi-org.pallas2.tcl.sc.edu/10.2173/bow.bktgod.01)
-### -- -- ###
-
-
-
-
-
-
-#### extract encounter and GPS matrices from predicted behaviors ####
-
-# summarize predictions df
-str(predictions)
-
-
-#extract julian day
-Julian <- as.numeric(format(predictions$t, "%j"))
-predictions <- cbind(predictions, Julian)
-
-unique(predictions$id)
 #define bounds of the 
 #Nesting - between 70 and 213
 #chick tending - between 80 and 244

@@ -109,4 +109,43 @@
     return(tracks)
   }
   
+#Extract predicitons from trained RF xytb object
+##Input: a trained xytb object
+  getPredictions <- function(x){
+    return(x@predb)
+  }
+  
+#Bind together a list of xytb objects
+##Input: a list of xytb objects
+  bindXytbs <- function(x, origTracks){
+    xyt <- data.frame()
+    for(val in 1:length(x)){
+      xyt<-rbind(xyt, x[[val]]@xyt)
+    }
+    
+    b <- data.frame()
+    for(val in 1:length(x)){
+      b <-rbind(b, x[[val]]@b)
+    }
+    
+    dxyt <- data.frame()
+    for(val in 1:length(x)){
+      dxyt <-rbind(dxyt, x[[val]]@dxyt)
+    }
+    
+    befdxyt <- data.frame()
+    for(val in 1:length(x)){
+      befdxyt <-rbind(befdxyt, x[[val]]@befdxyt)
+    }
+    
+    xytb <- tracks2xytb(origTracks, desc="BTGO Birds",winsize=seq(3,15,2), idquant=seq(0,1,.25),move=c(5,10,15))
+    
+    xytb@xyt <- xyt
+    xytb@b <- b
+    xytb@dxyt <- dxyt
+    xytb@befdxyt <- befdxyt
+    
+    return(xytb)
+  }
+  
   
