@@ -1,3 +1,6 @@
+
+# setUp -------------------------------------------------------------------
+
 #Standard setup of the workbook. Should be used in every script to clean environment
 ##Input: Packages to be installed and loaded into environment
   setUp <- function(x){
@@ -21,6 +24,8 @@
     options(max.print = 99)
     as.POSIXct(Sys.time(), origin = "1970-01-01")
   }
+
+# readTracks --------------------------------------------------------------
 
 #Concatenates all tracks into one data frame to be easily interpreted by processing scripts
 ##Input: directory to files containing predicted tracks
@@ -65,7 +70,9 @@
                     lon > minLon)
       return(x)
     }
-  
+
+# ll2utm ------------------------------------------------------------------
+
 #Convert longlat coordinates to utm or visversa
 ##Input: xytb object
   ll2utm <- function(df, zone = 31, ellps = "WGS84", proj1 = "longlat", proj2 = "utm"){
@@ -92,6 +99,8 @@
     return(df)
   }
 
+# tracks2xytb -------------------------------------------------------------
+
 #Create a xytb object from the imported tracks
 #Input from read tracks with proper labels(id, t, x, y, b)
   tracks2xytb <- function(tracks, desc, winsize, idquant, move){
@@ -109,12 +118,18 @@
     return(tracks)
   }
   
+
+# getPredictions ----------------------------------------------------------
+  
 #Extract predicitons from trained RF xytb object
 ##Input: a trained xytb object
   getPredictions <- function(x){
     return(x@predb)
   }
   
+
+# bindXytbs ---------------------------------------------------------------
+
 #Bind together a list of xytb objects
 ##Input: a list of xytb objects
   bindXytbs <- function(x, origTracks){
@@ -147,5 +162,68 @@
     
     return(xytb)
   }
+
+
+# balanceBeh & dropBeh ----------------------------------------------------
+
+#Balance known behaviors
+##Input: track data with predicted behaviors
+  balanceBeh <- function(x){
+    behTable <- table(x$b)
+    minVal <- behTable %>% min()
+    set.seed(1234)
+    behTable
+    for(val in 2:length(behTable)){
+      indexes <- sample(which(x$b == names(behTable)[val]), (behTable[val]-minVal), replace = FALSE)
+      x$b[indexes] <- -1
+    }
+    return(x)
+  }
   
+  #Drop out known behaviors
+  ##Input: track data with predicted behaviors
+  dropBeh <- function(x, prop = c(0.2, 0.2, 0.2, 0.2)){
+    behTable <- table(x$b)
+    set.seed(1234)
+    behTable
+    for(val in 2:length(behTable)){
+      indexes <- sample(which(x$b == names(behTable)[val]), behTable[val]*prop[val-1], replace = FALSE)
+      x$b[indexes] <- -1
+    }
+    return(x)
+  }
+
+
+# xytb2RF -----------------------------------------------------------------
+
+#Create xytb object into dataframe interpretable for the tidymodels workflow
+##Input: xytb object, nob: no behavior observation factor
+  xytb2RF <- function(xytb, nob){
+    #take labeled behaviors
+    dt_tracks <- cbind(xytb@b$b, xytb@befdxyt)
+    colnames(dt_tracks)[1] <- "actual"
+    
+    #create dataframe for RF training
+    dt_clean <- dt_tracks[which(dt_tracks$actual != nob),] %>% 
+      drop_na() 
+    
+    return(dt_clean)
+  }
   
+
+# tidymodels --------------------------------------------------------------
+
+#Split data into training and test sets
+##Input: cleaned data 
+  splitData <- function(dt_clean, prop, strata = NULL){
+    
+    #Set random split
+    set.seed(1234)
+    
+    #split the data prop train:test
+    dt_split <- initial_split(dt_clean, 
+                              prop = prop,
+                              strata = strata)
+    
+    return(dt_split)
+  }
