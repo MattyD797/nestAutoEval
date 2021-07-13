@@ -1,11 +1,12 @@
-# 1. setup packages and environment ---------------------------------------
-
-#clean environment
+# 1. set#clean environment
 rm(list=ls(all=TRUE))
 
 #load constants and functions
-source("Functions/standard_functions.R")
-source("Constants/file_locations.R")
+source("Functions/standard_functions.R") 
+source("Functions/format_functions.R")
+source("Constants/file_locations.R")up packages and environment ---------------------------------------
+
+
 
 #load in packages
 setUp(c("randomForest", 
@@ -25,88 +26,42 @@ setUp(c("randomForest",
         "tidymodels"))
 
 #RF generated predictions
-predictions <- load("predictions/RF.Rda")
+#predictions <- load("./predictions/RF.Rda")
+
+#on my local machine
+load("C:/Users/14064/Desktop/Local Loc/nestAutoEval/predictions/RF.Rda")
+names(predictions)[3] <- "b"
+
+predictions$b <- as.numeric(predictions$b)
 
 
-# 8. Get the Julian Data -----------------------------------------------------
+#### 8. run the function to create matrices ####
+build_matrices(RF_prediction = predictions, season.begin = "03-25", season.end = "08-20", period_length = 24, behavior_signal= "1")
 
-predictions <- predictions %>% 
-                add_column(as.numeric(format(predictions$t, "%j"))) %>% 
-                rename(Julian = 4)
-
+matrices$mat_beh
 
 
+#subset to those with complete incubation cycles
+mat_keep_rows <- c("2015-2014", "2016-2013", "2018-2014", "2002-2014", "2002-2015")
 
-#define bounds of the 
-#Nesting - between 70 and 213
-#chick tending - between 80 and 244
+matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
+matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
 
-#fate
-nest.beh <- predictions %>% group_by(id, Julian) %>% count(b)
-nest.beh <- nest.beh[nest.beh$b==1,]
+matrices$mat_beh_full
+matrices$mat_fix_full
 
+#### 9. predict survival from states ####
+btgo_outcomes <- nestR::estimate_outcomes(matrices$mat_fix, matrices$mat_beh, model = "phi_time_p_time", mcmc_params = list(burn_in = 1000, n_chain = 3, thin = 5, n_adapt = 1000, n_iter = 5000))
 
-nest.beh.final <- matrix(nrow = length(unique(nest.beh$id)), ncol = 365)
-rownames(nest.beh.final) <- c(unique(nest.beh$id))
-
-for(i in 1:length(nest.beh$id)){
-  nest.beh.final[match(nest.beh[i,1], pull(unique(nest.beh[,1]))),
-                  as.numeric(nest.beh[i, 2])] <- as.numeric(nest.beh[i,4])
-}
-#fate matrix
-nest.beh.final[is.na(nest.beh.final)] <- 0
-
-
-#GPS fixes
-gps.fixes <- predictions %>% group_by(id) %>% count(Julian)
-
-gps.fixes.final <- matrix(nrow = length(unique(gps.fixes$id)), ncol = 365)
-rownames(gps.fixes.final) <- c(unique(gps.fixes$id))
-
-
-
-for(i in 1:length(gps.fixes$id)){
-  gps.fixes.final[match(gps.fixes[i,1], pull(unique(gps.fixes[,1]))),
-                  as.numeric(gps.fixes[i, 2])] <- as.numeric(gps.fixes[i,3])
-}
-
-#GPS_fix_matrix
-gps.fixes.final[is.na(gps.fixes.final)] <- 0
-
-
-
-
-# gps.fixes.df <- as.data.frame(gps.fixes)
-# head(gps.fixes.df)
-
-
-#
-
-
-colnames(nest.beh.final) <- NULL
-rownames(nest.beh.final) <- NULL
-colnames(gps.fixes.final) <- NULL
-rownames(gps.fixes.final) <- NULL
-
-#trim down to the field season (for some reason, these need to be > 70 days long)
-nest.beh.final.trim <- nest.beh.final[,90:165]
-gps.fixes.final.trim <- gps.fixes.final[,90:165]
-
-
-
-
-
-
-#### predict survival from states ####
-
-
-btgo_outcomes <- estimate_outcomes(gps.fixes.final.trim, nest.beh.final.trim, model = "phi_time_p_time")
+btgo_outcomes$z
 
 
 #population levels
 plot_survival(btgo_outcomes)
 plot_detection(btgo_outcomes)
 
+
+print(plot_nest_surv(btgo_outcomes, who = 5))
 
 #print all the plots of survival 
 for( i in c(1:5)){plot(plot_nest_surv(btgo_outcomes, who = i))}

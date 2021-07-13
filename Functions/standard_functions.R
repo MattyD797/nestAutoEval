@@ -21,8 +21,11 @@
     
     foo(x)
     
-    options(max.print = 99)
+    options(max.print = 999)
     as.POSIXct(Sys.time(), origin = "1970-01-01")
+    
+   #
+    
   }
 
 # readTracks --------------------------------------------------------------
