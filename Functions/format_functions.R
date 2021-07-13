@@ -111,7 +111,7 @@ build_matrices <- function(RF_prediction, season.begin = "01-01", season.end = "
   
   lst <- list(NA,nrow(mat_beh))
   for(i in 1:nrow(mat_beh)){
-    lst[[i]] <- mat_fix[i,c(tmp_start[i]:tmp_end[i])]
+    lst[[i]] <- mat_fix[i,c(tmp_start[i]:tmp_end[i])] 
   }
   
   mat_fix_final <- as.matrix(do.call(rbind, lst))

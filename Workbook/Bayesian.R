@@ -1,12 +1,12 @@
-# 1. setup packages and environment ---------------------------------------
-
-#clean environment
+# 1. set#clean environment
 rm(list=ls(all=TRUE))
 
 #load constants and functions
-source("Functions/standard_functions.R")
+source("Functions/standard_functions.R") 
 source("Functions/format_functions.R")
-source("Constants/file_locations.R")
+source("Constants/file_locations.R")up packages and environment ---------------------------------------
+
+
 
 #load in packages
 setUp(c("randomForest", 
