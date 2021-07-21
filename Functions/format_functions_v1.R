@@ -166,7 +166,7 @@ build_matrices <- function(RF_prediction, season.begin = "01-01", season.end = "
 
 initialize_z <- function(ch = matrices$mat_beh_full) {
   # Initialize state using the "capture history" (in CMR parlance)
-  state <- ch
+  state <- ch #
   
   # Loop through each nest
   for (i in 1:nrow(ch)) {
