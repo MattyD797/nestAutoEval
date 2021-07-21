@@ -112,14 +112,20 @@ str(mat_beh); str(mat_fix)
   
 
  #identify first non-zero value in each row
- tmp_start <- as.vector(apply(mat_beh, 1, function(x) which(x!=0, arr.ind=F)))
+ tmp_start <- as.vector(apply(mat_beh, 1, function(x) which(x!=0, arr.ind=T)))
  
- tmp_start <- row(mat_beh)(which(mat_beh!=0))
+ #convert to list, then vector
+ lst <- list(NA,nrow(mat_beh))
+ 
+ for(i in 1:nrow(mat_beh)){
+   lst[i] <- min(tmp_start[[i]])
+ }
+ 
+ tmp_start <- as.vector(do.call(rbind, lst))
  
  tmp_end <- tmp_start + period_length
  
- lst <- vector("list",nrow(mat_beh))
- 
+ #use each to subset the matrices
  for(i in 1:nrow(mat_beh)){
    
    lst[[i]] <- mat_beh[i,c(mat_beh[i,tmp[i]]:mat_beh[i,tmp[i]+period_length])]
