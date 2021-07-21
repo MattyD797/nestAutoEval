@@ -125,38 +125,38 @@ build_matrices <- function(RF_prediction, season.begin = "01-01", season.end = "
   
   #get things ready for Bayesian! State matrices are always kept to 1 or 0, dead or alive
   
- 
+# 
+# 
+# 
+# 
+#   for(i in 1:nrow(mat_beh_final)){
+#     # The earliest "sighting" will always be the first day of the attempt
+#     #the last sighting will also be one
+#     n1 <- 1
+# 
+#     #identify last sighting
+#     n2 <- max(which(mat_beh_final[i,]>0))
+# 
+#     #mat_beh_final[mat_beh_final > 0] <- 1
+# 
+#     # ATTN: ---- THIS IS WHERE WE WOULD WANT A SENSITIVITY ANALYSIS - TO SEE A MINIMUM CUT OFF FOR THE NUMBER OF TIMES A BEHAVIOR IS REGISTERED BEFORE WE CALL IT A '1' ----
+# 
+#     #set all between first and last to 1
+#     mat_beh_final[i, n1:n2] <- 1
+# 
+#     #reset the first to NA (this is by definition, we always assume first day we see them with certainty)
+#     mat_beh_final[i, n1] <- NA
+# 
+# 
+#     # Now set any states remaining as 0 to NA so that JAGS will estimate them
+#     mat_beh_final[mat_beh_final == 0] <- NA
+# 
+#   }
+# 
+
   
   
-  
-  for(i in 1:nrow(mat_beh_final)){
-    # The earliest "sighting" will always be the first day of the attempt
-    #the last sighting will also be one
-    n1 <- 1
-    
-    #identify last sighting
-    n2 <- max(which(mat_beh_final[i,]>0))
-    
-    #mat_beh_final[mat_beh_final > 0] <- 1
-    
-    # ATTN: ---- THIS IS WHERE WE WOULD WANT A SENSITIVITY ANALYSIS - TO SEE A MINIMUM CUT OFF FOR THE NUMBER OF TIMES A BEHAVIOR IS REGISTERED BEFORE WE CALL IT A '1' ---- 
-    
-    #set all between first and last to 1
-    mat_beh_final[i, n1:n2] <- 1
-    
-    #reset the first to NA (this is by definition, we always assume first day we see them with certainty)
-    mat_beh_final[i, n1] <- NA
-    
-    
-    # Now set any states remaining as 0 to NA so that JAGS will estimate them
-    mat_beh_final[mat_beh_final == 0] <- NA
-    
-  }
-  
- 
-  
-  
-  matrices <<- list(mat_fix_final, mat_beh_final)
+  matrices <<- list(mat_fix, mat_beh)
   names(matrices) <<- c("mat_fix", "mat_beh")
   
   
@@ -164,7 +164,7 @@ build_matrices <- function(RF_prediction, season.begin = "01-01", season.end = "
   
 }
 
-initialize_z <- function(ch = matrices$mat_beh) {
+initialize_z <- function(ch = matrices$mat_beh_full) {
   # Initialize state using the "capture history" (in CMR parlance)
   state <- ch
   
@@ -177,7 +177,7 @@ initialize_z <- function(ch = matrices$mat_beh) {
     n2 <- max(which(ch[i,] > 0))
     
     # Set all states between first and last to 1
-    state[i, n1:(n2/2)] <- 1
+    state[i, n1:n2] <- 1
     
     # Reset first to NA (because always see them on first day by definition)
     state[i, n1] <- NA
