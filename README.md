@@ -30,6 +30,20 @@
 2. [X] Calculate Accuracy
 3. [X] Calculate Out of Bag Error
 
+- F1 score: 93.8%
+- Precision: 94.2%
+- Recall: 93.4%
+
+|   Behavior   | incubating  | foraging | chicktending | migrating |
+| :---------:  | :---------: | :------: | :----------: | :-------: |
+|  incubating  |     669     |    14    |      13      |      0    |
+| :---------:  | :---------: | :------: | :----------: | :-------: |
+|  foraging    |     63      |    1133  |      65      |      0    |
+| :---------:  | :---------: | :------: | :----------: | :-------: |
+| chicktending |     26      |    51    |      768     |      0    |
+| :---------:  | :---------: | :------: | :----------: | :-------: |
+|  migrating   |     0       |    0     |      0       |      8    |
+
 ### Create Hidden Markov Model
 1. [ ] Make HMM
 2. [ ] Calculate Accuracy
