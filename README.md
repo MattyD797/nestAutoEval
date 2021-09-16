@@ -35,6 +35,7 @@
 - Recall: 93.4%
 
 |   Behavior   | incubating  | foraging | chicktending | migrating |
+|--------------|-------------|----------|--------------|-----------|
 |  incubating  |     669     |    14    |      13      |      0    |
 |  foraging    |     63      |    1133  |      65      |      0    |
 | chicktending |     26      |    51    |      768     |      0    |
