@@ -7,8 +7,8 @@ source("Functions/format_functions_v1.R")
 source("Constants/file_locations.R")
 
 #set up packages and environment ---------------------------------------
-
-
+# library(remotes)
+# remotes::install_github("picardis/nestR", build_vignettes = F)
 
 #load in packages
 setUp(c("randomForest", 
@@ -38,10 +38,22 @@ predictions$b <- as.numeric(predictions$b)
 
 
 #### 8. run the function to create matrices ####
-build_matrices(RF_prediction=predictions, season.begin = "03-25", season.end = "08-20", period_length = 23, behavior_signal= "1")
+source("Functions/format_functions_v1.R"); build_matrices(RF_prediction=predictions, season.begin = "03-25", season.end = "08-20", period_length = 23, behavior_signal= "1")
 
 matrices$mat_beh
+matrices$mat_fix
 
+# matrices$mat_beh[matrices$mat_beh < 10] <- 0
+
+
+
+# tmp <- which(matrices$mat_fix == 0, arr.ind=TRUE); colnames(tmp) <- NULL; rownames(tmp) <- NULL
+# 
+# for(i in 1:nrow(tmp)){
+#   
+#   matrices$mat_beh[tmp[i,1],tmp[i,2]] <- NA
+#   
+# } ; matrices$mat_beh
 
 #subset to those with complete incubation cycles
 mat_keep_rows <- c("2015-2014", "2016-2013", "2018-2014", "2002-2014", "2002-2015")
@@ -52,10 +64,47 @@ matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_k
 matrices$mat_beh_full
 matrices$mat_fix_full
 
+initialize_z_LRW <- function(ch = visits) {
+  # Initialize state using the "capture history" (in CMR parlance)
+  state <- ch #
+
+  # Loop through each nest
+  for (i in 1:nrow(ch)) {
+    # The earliest "sighting" will always be the first day of the attempt
+    n1 <- 1
+
+    # The last sighting is the last time the animal was observed at the nest
+    n2 <- max(which(ch[i,] > 0))
+
+    # Set all states between first and last to 1
+    state[i, n1:n2] <- 1
+
+    # Reset first to NA (because always see them on first day by definition)
+    state[i, n1] <- NA
+  }
+
+  # Now set any states remaining as 0 to NA so that JAGS will estimate them
+  state[state == 0] <- NA
+
+  # tmp <- which(ch == 0, arr.ind=TRUE)
+  # 
+  # for(i in 1:nrow(tmp)){
+  # 
+  #   state[tmp[i,1],tmp[i,2]] <- NA
+  # 
+  # }
+  #
+  # Return
+  return(state)
+}
+
+initialize_z_LRW(ch = matrices$mat_beh_full)
+
 #matrices$mat_fix_full[4,c(19:24)] <- c(15,34,62,244,24,48)
 
 #### 9. predict survival from states ####
-btgo_outcomes <- nestR::estimate_outcomes(matrices$mat_fix_full, matrices$mat_beh_full, model = "phi_time_p_time", mcmc_params = list(burn_in = 1000, n_chain = 3, thin = 5, n_adapt = 1000, n_iter = 5000))
+btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, visits = matrices$mat_beh_full, model = "phi_time_p_time", mcmc_params = list(burn_in = 1000, n_chain = 3, thin = 5, n_adapt = 1000, n_iter = 5000)) ; inferred_surv(btgo_outcomes)
+
 
 
 btgo_outcomes$z
@@ -67,7 +116,7 @@ plot_survival(btgo_outcomes)
 plot_detection(btgo_outcomes)
 
 
-print(plot_nest_surv(btgo_outcomes, who = 5))
+print(plot_nest_surv(btgo_outcomes, who = 1))
 
 #print all the plots of survival 
 for( i in c(1:5)){plot(plot_nest_surv(btgo_outcomes, who = i))}
@@ -81,94 +130,6 @@ plot(btgo_pb0_coda); plot(btgo_pb1_coda)
 
 
 #### get outcome estimate ####
-
-inferred_surv <- function(mcmc_object, animals = matrices$mat_fix_full, ci = 0.95){
-  
-  # Initialize list for output
-  out <- list()  
-  
-  # Calculate the quantiles for the bounds of the credible interval
-  lwr <- 0 + (1 - ci)/2
-  upr <- 1 - (1 - ci)/2
-  
-  ### Population-level survival
-  
-  # If the model had time-varying phi, report the slope and intercept
-  if (grepl("phi_time", mcmc_object$model)){
-    
-    # Note that these parameters are on logit scale
-    out$phi <- data.frame(b0_lwr = apply(mcmc_object$phi.b0, 1, quantile, lwr),
-                          b0_mean = apply(mcmc_object$phi.b0, 1, mean),
-                          b0_upr = apply(mcmc_object$phi.b0, 1, quantile, upr),
-                          b1_lwr = apply(mcmc_object$phi.b1, 1, quantile, lwr),
-                          b1_mean = apply(mcmc_object$phi.b1, 1, mean),
-                          b1_upr = apply(mcmc_object$phi.b1, 1, quantile, upr))
-  } else {
-    
-    # Note that these estimates are not on logit scale
-    out$phi <- data.frame(lwr = quantile(mcmc_object$phi, lwr),
-                          mean = mean(mcmc_object$phi),
-                          upr = quantile(mcmc_object$phi, upr))
-    row.names(out$phi) <- NULL
-    
-  }
-  
-  ### Population-level detection
-  
-  if (grepl("p_time", mcmc_object$model)){
-    
-    # Note that these parameters are on logit scale
-    out$p <- data.frame(b0_lwr = apply(mcmc_object$p.b0, 1, quantile, lwr),
-                        b0_mean = apply(mcmc_object$p.b0, 1, mean),
-                        b0_upr = apply(mcmc_object$p.b0, 1, quantile, upr),
-                        b1_lwr = apply(mcmc_object$p.b1, 1, quantile, lwr),
-                        b1_mean = apply(mcmc_object$p.b1, 1, mean),
-                        b1_upr = apply(mcmc_object$p.b1, 1, quantile, upr))
-  } else {
-    
-    # Note that these estimates are not on logit scale
-    out$p <- data.frame(lwr = quantile(mcmc_object$p, lwr),
-                        mean = mean(mcmc_object$p),
-                        upr = quantile(mcmc_object$p, upr))
-    row.names(out$p) <- NULL
-    
-  }
-  
-  
-  ### Individual-level survival
-  
-  indiv <- data.frame(animal = as.factor(dput(as.character(rownames(animals)))),
-                      pr_succ_lwr = NA,
-                      pr_succ_mean = NA,
-                      pr_succ_upr = NA,
-                      last_day_lwr = NA,
-                      last_day_mean = NA,
-                      last_day_upr = NA)
-  
-  # Probability burst was a successful nest (survived to last day)
-  # Get the last day for each burst + iteration + chain
-  last_day <- apply(mcmc_object$z, c(1,3,4), getElement, ncol(mcmc_object$z))
-  
-  #get values
-  indiv$pr_succ_lwr <- apply(last_day, 1, quantile, lwr)
-  indiv$pr_succ_mean <- apply(last_day, 1, mean)
-  indiv$pr_succ_upr <- apply(last_day, 1, quantile, upr)
-  
-  # Latest day that a nest survived to
-  latest_day <- apply(mcmc_object$z, c(1, 3, 4), sum)
-  
-  # get values 
-  indiv$last_day_lwr <- apply(latest_day, 1, quantile, lwr)
-  indiv$last_day_mean <- apply(latest_day, 1, mean)
-  indiv$last_day_upr <- apply(latest_day, 1, quantile, upr)
-  
-  # Add to output list
-  out$outcomes <- indiv
-  
-  return(out)
-  
-}
-
 
 inferred_surv(btgo_outcomes)
 
