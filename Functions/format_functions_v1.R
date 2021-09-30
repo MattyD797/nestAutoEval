@@ -1,9 +1,20 @@
 # Author: Luke Wilde
 # Script to define functions for building matrices: first, check format, and second, build them
 
+#!!! Error for chick-tending happening bc those with beh (n=19) and those with fixes (25) are different - fails to rename the rows !!!#
+# rm(list=ls(all=TRUE))
+# 
+# #on my local machine
+# load("C:/Users/14064/Desktop/Local Loc/nestAutoEval/predictions/RF.Rda")
+# names(predictions)[3] <- "b"
+# 
+# predictions$b <- as.numeric(predictions$b)
+# 
+# 
+# RF_prediction = predictions; season.begin = "01-01"; season.end = "12-31"; period_length = 27; behavior_signal= "4"
 
 #### Function to construct the survival and observation matrices ####
-build_matrices <- function(RF_prediction, season.begin = "01-01", season.end = "12-31", period_length = 27, behavior_signal= "1", Bernoulli = TRUE, min_beh = 1){ 
+build_matrices <- function(RF_prediction, season.begin = "01-01", season.end = "12-31", period_length = 27, behavior_signal= "1"){ 
   
   # check input data
   # Check that all the fields are there
@@ -20,117 +31,119 @@ build_matrices <- function(RF_prediction, season.begin = "01-01", season.end = "
   if (!(inherits(RF_prediction$t, "POSIXct"))) stop("t needs to be 'POSIXct' format")
   if (sum(is.na(RF_prediction$b)) > 0) stop("please exclude rows where date is NA")
   
+    #extract Julian day
+    Julian <- as.numeric(format(RF_prediction$t, "%j"))
+    RF_prediction <- cbind(RF_prediction, Julian)
+    
+    #fate
+    beh <- RF_prediction %>% group_by(id, Julian) %>% count(b)
+    
+    #define fate
+    beh <- beh[beh$b==as.numeric(behavior_signal),]
+    
+    #create empty fate matrix
+    mat_beh <- matrix(NA, nrow = length(unique(beh$id)), ncol = 365)
+    
+    #loop through individuals
+    for(i in 1:length(beh$id)){
+      mat_beh[match(beh[i,1], pull(unique(beh[,1]))),
+              as.numeric(beh[i, 2])] <- as.numeric(beh[i,4])
+    }
+    
+    #fate matrix
+    mat_beh[is.na(mat_beh)] <- 0
+    
+    for(i in 1:nrow(mat_beh)){ tmp <-mat_beh[i,max(which(mat_beh[i,] > 2))]}
+    
+    apply(mat_beh>0,2,which.max)
+    
+    max.col(t(mat_beh >0), "last")
+    
+    #GPS fixes
+    
+    fixes <- RF_prediction %>% group_by(id) %>% count(Julian)
+    
+    fixes <- fixes[(fixes$id %in% beh$id),]
+    
+    #create blank matrix to fill
+    mat_fix <- matrix(NA, nrow = length(unique(fixes$id)), ncol = 365)
+    
+    
+    for(i in 1:length(fixes$id)){
+      mat_fix[match(fixes[i,1], pull(unique(fixes[,1]))),
+              as.numeric(fixes[i, 2])] <- as.numeric(fixes[i,3])
+    }
+    
+    #GPS_fix_matrix
+    mat_fix[is.na(mat_fix)] <- 0
+    
+    
+    #
+    nrow(mat_fix); nrow(mat_beh)
+    
+    colnames(mat_fix) <- colnames(mat_beh) <- NULL
+    
+    rownames(mat_fix) <- rownames(mat_beh) <- c(unique(beh$id))
+    
+    
+    #convert to POSIXct
+    season.begin_fmt <- as.POSIXct(season.begin, format = "%m-%d")
+    season.end_fmt <- as.POSIXct(season.end, format = "%m-%d")
+    
+    
+    ## subset matrices to season lenght ##
+    
+    mat_beh <- mat_beh[,as.numeric(format(season.begin_fmt, "%j")):as.numeric(format(season.end_fmt, "%j"))]
+    
+    mat_fix <- mat_fix[,as.numeric(format(season.begin_fmt, "%j")):as.numeric(format(season.end_fmt, "%j"))]
+    
+    
+    #identify first non-zero value in each row
+    tmp_start <- as.vector(apply(mat_beh, 1, function(x) which(x!=0, arr.ind=T)))
+    
+    #convert to list, then vector
+    lst <- list(NA,nrow(mat_beh))
+    
+    for(i in 1:nrow(mat_beh)){
+      lst[i] <- min(tmp_start[[i]])
+    }
+    
+    tmp_start <- as.vector(do.call(rbind, lst))
+    
+    tmp_end <- tmp_start + period_length
+    
+    lst <- list(NA,nrow(mat_beh))
+    #use each to subset the matrices
+    for(i in 1:nrow(mat_beh)){
+      lst[[i]] <- mat_beh[i,c(tmp_start[i]:tmp_end[i])]
+    }
+    
+    mat_beh_final <- as.matrix(do.call(rbind, lst))
+    
+    lst <- list(NA,nrow(mat_beh))
+    for(i in 1:nrow(mat_beh)){
+      lst[[i]] <- mat_fix[i,c(tmp_start[i]:tmp_end[i])] 
+    }
+    
+    mat_fix_final <- as.matrix(do.call(rbind, lst))
+    
+    #set rownames back
+    rownames(mat_fix_final) <- rownames(mat_beh_final) <- rownames(mat_beh)
+    
+    #set to binary
+    # mat_beh_final[mat_beh_final = 0] <- 0
+    # mat_beh_final[mat_beh_final > 0] <- 1
+    
+    #rename for ease
+    mat_fix <- mat_fix_final
+    mat_beh <- mat_beh_final
+    
+    
+    
+    matrices <<- list(mat_fix, mat_beh)
+    names(matrices) <<- c("mat_fix", "mat_beh")
+    
   
-  
-  #extract Julian day
-  Julian <- as.numeric(format(RF_prediction$t, "%j"))
-  RF_prediction <- cbind(RF_prediction, Julian)
-  
-  #fate
-  beh <- RF_prediction %>% group_by(id, Julian) %>% count(b)
-  
-  #define fate
-  beh <- beh[beh$b==as.numeric(behavior_signal),]
-  
-  #create empty fate matrix
-  mat_beh <- matrix(NA, nrow = length(unique(beh$id)), ncol = 365)
-  
-  #loop through individuals
-  for(i in 1:length(beh$id)){
-    mat_beh[match(beh[i,1], pull(unique(beh[,1]))),
-            as.numeric(beh[i, 2])] <- as.numeric(beh[i,4])
-  }
-  
-  #fate matrix
-  mat_beh[is.na(mat_beh)] <- 0
-  
-  for(i in 1:nrow(mat_beh)){ tmp <-mat_beh[i,max(which(mat_beh[i,] > 2))]}
-  
-  apply(mat_beh>0,2,which.max)
-  
-  max.col(t(mat_beh >0), "last")
-  
-  #GPS fixes
-  
-  fixes <- RF_prediction %>% group_by(id) %>% count(Julian)
-  
-  #create blank matrix to fill
-  mat_fix <- matrix(NA, nrow = length(unique(fixes$id)), ncol = 365)
-  
-  
-  for(i in 1:length(fixes$id)){
-    mat_fix[match(fixes[i,1], pull(unique(fixes[,1]))),
-            as.numeric(fixes[i, 2])] <- as.numeric(fixes[i,3])
-  }
-  
-  #GPS_fix_matrix
-  mat_fix[is.na(mat_fix)] <- 0
-  
-  
-  #
-  
-  
-  colnames(mat_fix) <- colnames(mat_beh) <- NULL
-  
-  rownames(mat_fix) <- rownames(mat_beh) <- c(unique(beh$id))
-  
-  
-  #convert to POSIXct
-  season.begin_fmt <- as.POSIXct(season.begin, format = "%m-%d")
-  season.end_fmt <- as.POSIXct(season.end, format = "%m-%d")
-  
-  
-  ## subset matrices to season lenght ##
-  
-  mat_beh <- mat_beh[,as.numeric(format(season.begin_fmt, "%j")):as.numeric(format(season.end_fmt, "%j"))]
-  
-  mat_fix <- mat_fix[,as.numeric(format(season.begin_fmt, "%j")):as.numeric(format(season.end_fmt, "%j"))]
-  
-  
-  #identify first non-zero value in each row
-  tmp_start <- as.vector(apply(mat_beh, 1, function(x) which(x!=0, arr.ind=T)))
-  
-  #convert to list, then vector
-  lst <- list(NA,nrow(mat_beh))
-  
-  for(i in 1:nrow(mat_beh)){
-    lst[i] <- min(tmp_start[[i]])
-  }
-  
-  tmp_start <- as.vector(do.call(rbind, lst))
-  
-  tmp_end <- tmp_start + period_length
-  
-  lst <- list(NA,nrow(mat_beh))
-  #use each to subset the matrices
-  for(i in 1:nrow(mat_beh)){
-    lst[[i]] <- mat_beh[i,c(tmp_start[i]:tmp_end[i])]
-  }
-  
-  mat_beh_final <- as.matrix(do.call(rbind, lst))
-  
-  lst <- list(NA,nrow(mat_beh))
-  for(i in 1:nrow(mat_beh)){
-    lst[[i]] <- mat_fix[i,c(tmp_start[i]:tmp_end[i])] 
-  }
-  
-  mat_fix_final <- as.matrix(do.call(rbind, lst))
-  
-  #set rownames back
-  rownames(mat_fix_final) <- rownames(mat_beh_final) <- rownames(mat_beh)
-  
-  #set to binary
-  # mat_beh_final[mat_beh_final = 0] <- 0
-  mat_beh_final[mat_beh_final > 0] <- 1
-  
-  #rename for ease
-  mat_fix <- mat_fix_final
-  mat_beh <- mat_beh_final
-  
-  
-  
-  matrices <<- list(mat_fix, mat_beh)
-  names(matrices) <<- c("mat_fix", "mat_beh")
   
   # tmp <- which(matrices$mat_fix == 0, arr.ind=TRUE); colnames(tmp) <- NULL; rownames(tmp) <- NULL
   # 
@@ -222,13 +235,7 @@ initialize_z_LRW <- function(ch = visits) {
   # Now set any states remaining as 0 to NA so that JAGS will estimate them
   state[state == 0] <- NA
   # 
-  # tmp <- which(ch == 0, arr.ind=TRUE)
-  # 
-  # for(i in 1:nrow(tmp)){
-  # 
-  #   state[tmp[i,1],tmp[i,2]] <- NA
-  # 
-  # }
+
   # 
   # Return
   return(state)
