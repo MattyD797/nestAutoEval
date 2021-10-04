@@ -49,14 +49,17 @@ xytb <- bindXytbs(xytbs, tracks)
 
 # 6. Create RF training dataframe --------------------------------------------
 
-dt_clean <- xytb2RF(xytb, -1)
+dt_list <- xytb2RF(xytb, -1)
+
+dt_tracks <- dt_list[[1]]
+dt_clean <- dt_list[[2]]
 
 
 # 7. tidymodels workflow -----------------------------------------------------
 
 # split data #
 
-dt_split <- splitData(dt_clean, 8/10, actual)
+dt_split <- splitData(dt_clean, 8/10, "actual", breaks = 4)
 
 # define train and test set #
 
@@ -147,5 +150,12 @@ final_model <- fit(rf_workflow, dt_clean)
 rowsNA <- which(is.na(dt_tracks), arr.ind=TRUE)[,1] %>%  unique()
 predictionsRF <- predict(final_model, dt_tracks %>% na.omit())
 predictions <- cbind(xytb@b[-rowsNA, c("id", "t")], predictionsRF)
+
+
+# Save --------------------------------------------------------------------
+
+save(rf_fit, file = "trainModels/RF.Rda")
+
+save(final_model, file = "finalModels/RF.Rda")
 
 save(predictions, file= "predictions/RF.Rda")
