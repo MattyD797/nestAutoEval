@@ -5,3 +5,7 @@ predicted_tracks <- "nestData/"
 nest_fates <- "fieldNotes/Nest_Fates.csv"
 nest_locations <- "fieldNotes/Nest_Locations.csv"
 obs_behaviors <- "fieldNotes/ObservedBehaviors.csv"
+
+#Lat and long
+minLat <- 50
+minLon <- 3
