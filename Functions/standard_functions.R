@@ -21,8 +21,11 @@
     
     foo(x)
     
-    options(max.print = 99)
+    options(max.print = 999)
     as.POSIXct(Sys.time(), origin = "1970-01-01")
+    
+   #
+    
   }
 
 # readTracks --------------------------------------------------------------
@@ -228,3 +231,25 @@
     
     return(dt_split)
   }
+  
+
+# Persistence -------------------------------------------------------------
+
+#Add the number of continuous repeats of behavior is prevalent
+##Input predictions form one of the models (.pred_class)
+  addPersist <- function(x){
+    #find number of repeats
+    repeats <- rle(as.vector(x$.pred_class)) %>%
+      unclass() %>% 
+      as.data.frame()
+    temp <- vector()
+    #Fill new column with that number
+    for(val in 1:nrow(repeats)){
+      temp <- c(temp, rep(repeats[val,1], repeats[val,1]))
+    }
+    
+    #fill temp in x data frame
+    x$repeated <- temp
+    
+    return(x)
+  }  

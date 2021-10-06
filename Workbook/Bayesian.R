@@ -1,11 +1,15 @@
-# 1. setup packages and environment ---------------------------------------
 
-#clean environment
+# 1. set#clean environment
 rm(list=ls(all=TRUE))
 
 #load constants and functions
-source("Functions/standard_functions.R")
+source("Functions/standard_functions.R") 
+source("Functions/format_functions_v2.1.R")
 source("Constants/file_locations.R")
+
+#set up packages and environment ---------------------------------------
+# library(remotes)
+# remotes::install_github("picardis/nestR", build_vignettes = F)
 
 #load in packages
 setUp(c("randomForest", 
@@ -22,10 +26,12 @@ setUp(c("randomForest",
         "R2jags", 
         "runjags", 
         "rjags", 
-        "tidymodels"))
+        "tidymodels", "ggplot2", "lme4"))
+
 
 #RF generated predictions
-predictions <- load("predictions/RF.Rda")
+<<<<<<< HEAD
+load("predictions/RF.Rda")
 
 
 # 8. Get the Julian Data -----------------------------------------------------
@@ -40,373 +46,179 @@ predictions <- predictions %>%
 #define bounds of the 
 #Nesting - between 70 and 213
 #chick tending - between 80 and 244
+=======
+#predictions <- load("./predictions/RF.Rda")
+>>>>>>> 2351818c9083c10e39caab0a4d2400f794442346
 
-#fate
-nest.beh <- predictions %>% group_by(id, Julian) %>% count(b)
-nest.beh <- nest.beh[nest.beh$b==1,]
+#on my local machine
+load("C:/Users/14064/Desktop/Local Loc/nestAutoEval/predictions/RF.Rda")
+names(predictions)[3] <- "b"
 
+predictions$b <- as.numeric(predictions$b)
+ # Aug 26, tag 2015-2013 = 101 (looked at it, every location was classified as chick tending for the entire day); April 29, 2015-2014 = 150 (this one had the same issue, plus irregular fix rates between 2-15 min, mostly 5)
 
-nest.beh.final <- matrix(nrow = length(unique(nest.beh$id)), ncol = 365)
-rownames(nest.beh.final) <- c(unique(nest.beh$id))
 
-for(i in 1:length(nest.beh$id)){
-  nest.beh.final[match(nest.beh[i,1], pull(unique(nest.beh[,1]))),
-                  as.numeric(nest.beh[i, 2])] <- as.numeric(nest.beh[i,4])
-}
-#fate matrix
-nest.beh.final[is.na(nest.beh.final)] <- 0
+#### 8. run the function to create matrices ####
 
+# SETTINGS DESCRIPTION!! FOLLOW THESE GUIDELINES #
+#Nest - best settings season.begin = "03-25", season.end = "08-20", period_length = 26
+<<<<<<< HEAD
+#Chick - best settings season.begin = "05-10", season.end = "10-20", period_length = 26, behavior_signal= "3", min.occ = 16
 
-#GPS fixes
-gps.fixes <- predictions %>% group_by(id) %>% count(Julian)
+unique(predictions$b)
 
-gps.fixes.final <- matrix(nrow = length(unique(gps.fixes$id)), ncol = 365)
-rownames(gps.fixes.final) <- c(unique(gps.fixes$id))
+build_matrices(RF_prediction=predictions, season.begin = "05-10", season.end = "10-20", period_length = 26, behavior_signal= "3", min.occ = 16)
 
+# for chick-tending
+matrices$mat_beh_full <-  matrices$mat_beh 
+matrices$mat_fix_full <-  matrices$mat_fix 
 
+matrices$mat_beh_full[which(rownames(matrices$mat_beh_full) %in% c("2004-2013","2020-2013","2041-2013","2012-2013","2023-2013","1008-2013","1009-2013","2017-2013","2019-2013")),]
 
-for(i in 1:length(gps.fixes$id)){
-  gps.fixes.final[match(gps.fixes[i,1], pull(unique(gps.fixes[,1]))),
-                  as.numeric(gps.fixes[i, 2])] <- as.numeric(gps.fixes[i,3])
-}
+matrices$mat_beh_full[which(!rownames(matrices$mat_beh_full) %in% c("2004-2013","2020-2013","2041-2013","2012-2013","2023-2013","1008-2013","1009-2013","2017-2013","2019-2013")),]
 
-#GPS_fix_matrix
-gps.fixes.final[is.na(gps.fixes.final)] <- 0
 
+btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, visits = matrices$mat_beh_full, model = "phi_time_p_time_indiv", mcmc_params = list(burn_in = 1000, n_chain = 3, thin = 5, n_adapt = 1000, n_iter = 3000))
 
+#inferred_surv(btgo_outcomes)
 
+Nest_Fates <- read_csv("fieldNotes/Nest_Fates_1.csv")
 
-# gps.fixes.df <- as.data.frame(gps.fixes)
-# head(gps.fixes.df)
+Nest_Fates <- Nest_Fates[ which(Nest_Fates$id %in% inferred_surv(btgo_outcomes, ci = .80)$outcomes[,1]),]
 
+Nest_Fates$FledgingSuccess
+Nest_Fates$id
 
-#
+fate <- Nest_Fates[ order(Nest_Fates$id),]
 
+check <- cbind(fate$FledgingSuccess, inferred_surv(btgo_outcomes)$outcomes)
 
-colnames(nest.beh.final) <- NULL
-rownames(nest.beh.final) <- NULL
-colnames(gps.fixes.final) <- NULL
-rownames(gps.fixes.final) <- NULL
 
-#trim down to the field season (for some reason, these need to be > 70 days long)
-nest.beh.final.trim <- nest.beh.final[,90:165]
-gps.fixes.final.trim <- gps.fixes.final[,90:165]
 
+ggplot(check) + geom_boxplot(aes(x=factor(fate$FledgingSuccess), y = pr_succ_mean), colour =  "grey40" , outlier.alpha = 0.001) + geom_point(aes(x=factor(fate$FledgingSuccess), y = pr_succ_mean), na.rm=TRUE, position=position_jitter(width=.12, height = 0), colour = "forestgreen") + theme_classic()  + labs(x = "True Fate", y = "Pr(Survival)")  + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12)) 
 
 
 
+#build_matrices(RF_prediction=predictions, season.begin = "03-25", season.end = "08-20", period_length = 30, behavior_signal= "1")
 
 
-#### predict survival from states ####
+ matrices$mat_beh[c(1:5),c(1:10)]
+ matrices$mat_fix[c(1:5),c(1:10)]
+=======
+#Chick - best settings season.begin = "03-25", season.end = "09-20", period_length = 22
 
+build_matrices(RF_prediction=predictions, season.begin = "03-25", season.end = "08-20", period_length = 30, behavior_signal= "1")
 
-btgo_outcomes <- estimate_outcomes(gps.fixes.final.trim, nest.beh.final.trim, model = "phi_time_p_time")
+ matrices$mat_beh[c(1:5),c(1:10)]
+# matrices$mat_fix[c(1:5),c(1:10)]
+>>>>>>> f5c989594158b23ce85b7b6735cf5b506cb11a7c
 
 
-#population levels
-plot_survival(btgo_outcomes)
-plot_detection(btgo_outcomes)
+#subset to those with complete incubation cycles
+ mat_keep_rows <- c("2015-2014", "2016-2013", "2018-2014", "2002-2014", "2002-2015") #only for nest model
 
+ # for nest
+<<<<<<< HEAD
 
-#print all the plots of survival 
-for( i in c(1:5)){plot(plot_nest_surv(btgo_outcomes, who = i))}
+  matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
+  matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
 
-# diagnostics
-btgo_pb0_coda <- coda::as.mcmc.list(btgo_outcomes$p.b0)
-btgo_pb1_coda <- coda::as.mcmc.list(btgo_outcomes$p.b1)
+# for chick-tending
+  matrices$mat_beh_full <-  matrices$mat_beh 
+  matrices$mat_fix_full <-  matrices$mat_fix 
 
-#looking for fuzzy caterpillars (good mixing of the 3 mcmc chains) and a simetrical distribution that fits the observed data (black dashes)
-plot(btgo_pb0_coda); plot(btgo_pb1_coda)
+ matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
+ matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
 
+# for chick-tending
+ matrices$mat_beh_full <-  matrices$mat_beh 
+ matrices$mat_fix_full <-  matrices$mat_fix 
 
-#### get outcome estimate ####
 
-inferred_surv <- function(mcmc_object, ci = 0.95){
 
-  # Initialize list for output
-  out <- list()  
+#### 9. predict survival from states ####
+btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, visits = matrices$mat_beh_full, model = "phi_time_p_time", mcmc_params = list(burn_in = 1000, n_chain = 3, thin = 5, n_adapt = 1000, n_iter = 7000)) #; inferred_surv(btgo_outcomes)
+=======
+ matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
+ matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
 
-# Calculate the quantiles for the bounds of the credible interval
-lwr <- 0 + (1 - ci)/2
-upr <- 1 - (1 - ci)/2
+# for chick-tending
+ # matrices$mat_beh_full <-  matrices$mat_beh 
+ # matrices$mat_fix_full <-  matrices$mat_fix 
 
-### Population-level survival
 
-# If the model had time-varying phi, report the slope and intercept
-if (grepl("phi_time", mcmc_object$model)){
-  
-  # Note that these parameters are on logit scale
-  out$phi <- data.frame(b0_lwr = apply(mcmc_object$phi.b0, 1, quantile, lwr),
-                        b0_mean = apply(mcmc_object$phi.b0, 1, mean),
-                        b0_upr = apply(mcmc_object$phi.b0, 1, quantile, upr),
-                        b1_lwr = apply(mcmc_object$phi.b1, 1, quantile, lwr),
-                        b1_mean = apply(mcmc_object$phi.b1, 1, mean),
-                        b1_upr = apply(mcmc_object$phi.b1, 1, quantile, upr))
-} else {
-  
-  # Note that these estimates are not on logit scale
-  out$phi <- data.frame(lwr = quantile(mcmc_object$phi, lwr),
-                        mean = mean(mcmc_object$phi),
-                        upr = quantile(mcmc_object$phi, upr))
-  row.names(out$phi) <- NULL
-  
-}
-
-### Population-level detection
-
-if (grepl("p_time", mcmc_object$model)){
-  
-  # Note that these parameters are on logit scale
-  out$p <- data.frame(b0_lwr = apply(mcmc_object$p.b0, 1, quantile, lwr),
-                      b0_mean = apply(mcmc_object$p.b0, 1, mean),
-                      b0_upr = apply(mcmc_object$p.b0, 1, quantile, upr),
-                      b1_lwr = apply(mcmc_object$p.b1, 1, quantile, lwr),
-                      b1_mean = apply(mcmc_object$p.b1, 1, mean),
-                      b1_upr = apply(mcmc_object$p.b1, 1, quantile, upr))
-} else {
-  
-  # Note that these estimates are not on logit scale
-  out$p <- data.frame(lwr = quantile(mcmc_object$p, lwr),
-                      mean = mean(mcmc_object$p),
-                      upr = quantile(mcmc_object$p, upr))
-  row.names(out$p) <- NULL
-  
-}
-
-
-### Individual-level survival
-
-indiv <- data.frame(animal = as.factor(dput(as.character(unique(predictions$id)))),
-                    pr_succ_lwr = NA,
-                    pr_succ_mean = NA,
-                    pr_succ_upr = NA,
-                    last_day_lwr = NA,
-                    last_day_mean = NA,
-                    last_day_upr = NA)
-
-# Probability burst was a successful nest (survived to last day)
-# Get the last day for each burst + iteration + chain
-last_day <- apply(mcmc_object$z, c(1,3,4), getElement, ncol(mcmc_object$z))
-
-#get values
-indiv$pr_succ_lwr <- apply(last_day, 1, quantile, lwr)
-indiv$pr_succ_mean <- apply(last_day, 1, mean)
-indiv$pr_succ_upr <- apply(last_day, 1, quantile, upr)
-
-# Latest day that a nest survived to
-latest_day <- apply(mcmc_object$z, c(1, 3, 4), sum)
-
-# get values 
-indiv$last_day_lwr <- apply(latest_day, 1, quantile, lwr)
-indiv$last_day_mean <- apply(latest_day, 1, mean)
-indiv$last_day_upr <- apply(latest_day, 1, quantile, upr)
-
-# Add to output list
-out$outcomes <- indiv
-
-return(out)
-
-}
-
-
-inferred_surv(btgo_outcomes)
-
-
-
-
-
-#### CHICK TENDING #########
-
-#### extract encounter and GPS matrices from predicted behaviors ####
-
-# summarize predictions df
-str(predicted_full)
-
-
-#extract julian day
-Julian <- as.numeric(format(predicted_full$t, "%j"))
-predicted_full <- cbind(predicted_full, Julian)
-
-unique(predicted_full$id)
-#define bounds of the 
-#Nesting - between 70 and 213
-#chick tending - between 80 and 244
-
-#fate
-chick.beh <- predicted_full %>% group_by(id, Julian) %>% count(b)
-chick.beh <- chick.beh[chick.beh$b==4,]
-
-
-chick.beh.final <- matrix(nrow = length(unique(chick.beh$id)), ncol = 365)
-rownames(chick.beh.final) <- c(unique(chick.beh$id))
-
-for(i in 1:length(chick.beh$id)){
-  chick.beh.final[match(chick.beh[i,1], pull(unique(chick.beh[,1]))),
-                 as.numeric(chick.beh[i, 2])] <- as.numeric(chick.beh[i,4])
-}
-#fate matrix
-chick.beh.final[is.na(chick.beh.final)] <- 0
-
-
-#GPS fixes
-gps.fixes <- predicted_full %>% group_by(id) %>% count(Julian)
-
-gps.fixes.final <- matrix(nrow = length(unique(gps.fixes$id)), ncol = 365)
-rownames(gps.fixes.final) <- c(unique(gps.fixes$id))
-
-
-
-for(i in 1:length(gps.fixes$id)){
-  gps.fixes.final[match(gps.fixes[i,1], pull(unique(gps.fixes[,1]))),
-                  as.numeric(gps.fixes[i, 2])] <- as.numeric(gps.fixes[i,3])
-}
-
-#GPS_fix_matrix
-gps.fixes.final[is.na(gps.fixes.final)] <- 0
-
-
-
-
-# gps.fixes.df <- as.data.frame(gps.fixes)
-# head(gps.fixes.df)
-
-
-#
-
-
-colnames(chick.beh.final) <- NULL
-rownames(chick.beh.final) <- NULL
-colnames(gps.fixes.final) <- NULL
-rownames(gps.fixes.final) <- NULL
-
-#trim down to the field season (for some reason, these need to be > 70 days long)
-chick.beh.final.trim <- chick.beh.final[,90:230]
-gps.fixes.final.trim <- gps.fixes.final[,90:230]
-
-
-
-
-
-
-#### predict survival from states ####
-
-
-btgo_outcomes <- estimate_outcomes(gps.fixes.final.trim, chick.beh.final.trim, model = "phi_time")
-
-
-#population levels
-plot_survival(btgo_outcomes)
-plot_detection(btgo_outcomes)
-
-
-btgo_outcomes$z
-
-#print all the plots of survival 
-for( i in 1:nrow(gps.fixes.final.trim)){plot(plot_nest_surv(btgo_outcomes, who = i))}
-
-# diagnostics
-btgo_pb0_coda <- coda::as.mcmc.list(btgo_outcomes$p.b0) #checking intercept of observation process
-btgo_pb1_coda <- coda::as.mcmc.list(btgo_outcomes$p.b1) #checking slope of observation process
-
-#looking for fuzzy caterpillars (good mixing of the 3 mcmc chains) and a simetrical distribution that fits the observed data (black dashes)
-plot(btgo_pb0_coda); plot(btgo_pb1_coda)
-
-
-#### get outcome estimate ####
-
-inferred_chick_surv <- function(mcmc_object, ci = 0.95){
-  
-  # Initialize list for output
-  out <- list()  
-  
-  # Calculate the quantiles for the bounds of the credible interval
-  lwr <- 0 + (1 - ci)/2
-  upr <- 1 - (1 - ci)/2
-  
-  ### Population-level survival
-  
-  # If the model had time-varying phi, report the slope and intercept
-  if (grepl("phi_time", mcmc_object$model)){
-    
-    # Note that these parameters are on logit scale
-    out$phi <- data.frame(b0_lwr = apply(mcmc_object$phi.b0, 1, quantile, lwr),
-                          b0_mean = apply(mcmc_object$phi.b0, 1, mean),
-                          b0_upr = apply(mcmc_object$phi.b0, 1, quantile, upr),
-                          b1_lwr = apply(mcmc_object$phi.b1, 1, quantile, lwr),
-                          b1_mean = apply(mcmc_object$phi.b1, 1, mean),
-                          b1_upr = apply(mcmc_object$phi.b1, 1, quantile, upr))
-  } else {
-    
-    # Note that these estimates are not on logit scale
-    out$phi <- data.frame(lwr = quantile(mcmc_object$phi, lwr),
-                          mean = mean(mcmc_object$phi),
-                          upr = quantile(mcmc_object$phi, upr))
-    row.names(out$phi) <- NULL
-    
-  }
-  
-  ### Population-level detection
-  
-  if (grepl("p_time", mcmc_object$model)){
-    
-    # Note that these parameters are on logit scale
-    out$p <- data.frame(b0_lwr = apply(mcmc_object$p.b0, 1, quantile, lwr),
-                        b0_mean = apply(mcmc_object$p.b0, 1, mean),
-                        b0_upr = apply(mcmc_object$p.b0, 1, quantile, upr),
-                        b1_lwr = apply(mcmc_object$p.b1, 1, quantile, lwr),
-                        b1_mean = apply(mcmc_object$p.b1, 1, mean),
-                        b1_upr = apply(mcmc_object$p.b1, 1, quantile, upr))
-  } else {
-    
-    # Note that these estimates are not on logit scale
-    out$p <- data.frame(lwr = quantile(mcmc_object$p, lwr),
-                        mean = mean(mcmc_object$p),
-                        upr = quantile(mcmc_object$p, upr))
-    row.names(out$p) <- NULL
-    
-  }
-  
-
-  
-  ### Individual-level survival
-  
-  indiv <- data.frame(animal = as.factor(dput(as.character(unique(predicted_full$id)))),
-                      pr_succ_lwr = NA,
-                      pr_succ_mean = NA,
-                      pr_succ_upr = NA,
-                      last_day_lwr = NA,
-                      last_day_mean = NA,
-                      last_day_upr = NA)
-  
-  # Probability burst was a successful nest (survived to last day)
-  # Get the last day for each burst + iteration + chain
-  last_day <- apply(mcmc_object$z, c(1,3,4), getElement, ncol(mcmc_object$z))
-  
-  #get values
-  indiv$pr_succ_lwr <- apply(last_day, 1, quantile, lwr)
-  indiv$pr_succ_mean <- apply(last_day, 1, mean)
-  indiv$pr_succ_upr <- apply(last_day, 1, quantile, upr)
-  
-  # Latest day that a nest survived to
-  latest_day <- apply(mcmc_object$z, c(1, 3, 4), sum)
-  
-  # get values 
-  indiv$last_day_lwr <- apply(latest_day, 1, quantile, lwr)
-  indiv$last_day_mean <- apply(latest_day, 1, mean)
-  indiv$last_day_upr <- apply(latest_day, 1, quantile, upr)
-  
-  # Add to output list
-  out$outcomes <- indiv
-  
-  return(out)
-  
-}
-
-
-inferred_chick_surv(btgo_outcomes)
-
-
-
+#### 9. predict survival from states ####
+btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, visits = matrices$mat_beh_full, model = "phi_time_p_time", mcmc_params = list(burn_in = 1000, n_chain = 3, thin = 5, n_adapt = 1000, n_iter = 5000)) #; inferred_surv(btgo_outcomes)
+>>>>>>> f5c989594158b23ce85b7b6735cf5b506cb11a7c
+
+# 
+# 
+# btgo_outcomes$z
+# 
+# 
+# 
+# #population levels
+# plot_survival(btgo_outcomes)
+# plot_detection(btgo_outcomes)
+# 
+# 
+# print(plot_nest_surv(btgo_outcomes, who = 1))
+# 
+# #print all the plots of survival 
+# for( i in c(1:5)){plot(plot_nest_surv(btgo_outcomes, who = i))}
+# 
+# # diagnostics
+# btgo_pb0_coda <- coda::as.mcmc.list(btgo_outcomes$p.b0)
+# btgo_pb1_coda <- coda::as.mcmc.list(btgo_outcomes$p.b1)
+# 
+# #looking for fuzzy caterpillars (good mixing of the 3 mcmc chains) and a simetrical distribution that fits the observed data (black dashes)
+# plot(btgo_pb0_coda); plot(btgo_pb1_coda)
+
+# 
+# #### get outcome estimate - nesting ####
+# 
+# #process data
+ surv <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,3] #this is for the boxplot, dichotemy plot
+# 
+# 
+fate <- c(24,24,24,20,24)
+pred <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,6]; pred
+# 
+print(summary(lm(fate ~ pred)))
+
+# 
+ ggplot() + geom_boxplot(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), y=surv), colour =  "grey40", outlier.alpha = 0.001) + geom_point(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), y=surv), na.rm=TRUE, position=position_jitter(width=.152, height = 0), colour = "purple3") + theme_classic()  + labs(x = "True Fate", y = "Pr(Survival|movement)")  + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12))   # 
+# 
+# 
+# 
+# 
+
+#### get outcome estimate - chick tending ####
+
+#process data
+surv <- inferred_surv(btgo_outcomes, ci = .80)$outcomes #this is for the boxplot, dichotemy plot
+out <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,c(5:7)] #for the scatterplot and line of best fit
+
+Nest_Fates <- read_csv("fieldNotes/Nest_Fates_1.csv")
+
+Nest_Fates <- Nest_Fates[ which(Nest_Fates$id %in% inferred_surv(btgo_outcomes, ci = .80)$outcomes[,1]),]
+
+Nest_Fates$FledgingSuccess
+
+out_final <- cbind(Nest_Fates, out); out_final <- out_final[ which(out_final$LastDaySeenChickGuiding != "NA"),]
+
+#find relationship
+print(summary(lm(last_day_mean ~ DaysBroodAlive, data = out_final)))
+<<<<<<< HEAD
+print(summary(lm(surv$pr_succ_mean ~ Nest_Fates$FledgingSuccess, data = out_final)))
+=======
+>>>>>>> f5c989594158b23ce85b7b6735cf5b506cb11a7c
+
+ggplot(surv) + geom_boxplot(aes(x = factor(Nest_Fates$FledgingSuccess), y=pr_succ_mean), colour =  "grey40" , outlier.alpha = 0.001) + geom_point(aes(x = factor(Nest_Fates$FledgingSuccess), y=pr_succ_mean), na.rm=TRUE, position=position_jitter(width=.12, height = 0), colour = "forestgreen") + theme_classic()  + labs(x = "True Fate", y = "Pr(Survival)")  + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12))  
+
+ggplot(out_final) + geom_pointrange(aes(x = DaysBroodAlive, y=last_day_mean, ymax = last_day_upr, ymin = last_day_lwr), na.rm=TRUE, position=position_jitter(width=.2, height = 0), colour = "forestgreen") + theme_classic() + labs(x = "Age at Last Field Observation", y = "Median Day Predicted Alive")  + coord_cartesian(ylim=c(0,32), xlim = c(0,36)) + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12)) + scale_x_continuous(expand = c(0,0), limits = c(-10,36), breaks = seq(0,36, by = 2)) + scale_y_continuous(expand = c(0,0), limits = c(-10,36), breaks = seq(-10,36, by = 2)) + geom_smooth(aes(x = DaysBroodAlive, y=last_day_mean), se=F, method = "lm", colour = "forestgreen")
+
+ggplot() + geom_point(aes(y=surv$pr_succ_mean, x= Nest_Fates$FledgingSuccess)) + geom_smooth(aes(y=surv$pr_succ_mean, x= Nest_Fates$FledgingSuccess), method = "lm", se = F, colour = "black") + theme_classic()
 
 
 
