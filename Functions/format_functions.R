@@ -164,7 +164,7 @@ build_matrices <- function(RF_prediction, season.begin = "01-01", season.end = "
   
 }
 
-initialize_z <- function(matrices) {
+initialize_z <- function(ch = matrices$mat_beh) {
   # Initialize state using the "capture history" (in CMR parlance)
   state <- ch
   
@@ -177,7 +177,7 @@ initialize_z <- function(matrices) {
     n2 <- max(which(ch[i,] > 0))
     
     # Set all states between first and last to 1
-    state[i, n1:n2] <- 1
+    state[i, n1:(n2/2)] <- 1
     
     # Reset first to NA (because always see them on first day by definition)
     state[i, n1] <- NA
