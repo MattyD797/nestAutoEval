@@ -30,7 +30,11 @@ setUp(c("randomForest",
 
 
 #RF generated predictions
+<<<<<<< HEAD
 
+=======
+<<<<<<< HEAD
+>>>>>>> main
 load("predictions/RF.Rda")
 
 
@@ -46,7 +50,11 @@ predictions <- predictions %>%
 #define bounds of the 
 #Nesting - between 70 and 213
 #chick tending - between 80 and 244
+=======
+#predictions <- load("./predictions/RF.Rda")
+>>>>>>> 2351818c9083c10e39caab0a4d2400f794442346
 
+<<<<<<< HEAD
 
 #on my local machine
 load("C:/Users/14064/Desktop/Local Loc/nestAutoEval/predictions/RF.Rda")
@@ -60,6 +68,33 @@ predictions$b <- as.numeric(predictions$b)
 
 # SETTINGS DESCRIPTION!! FOLLOW THESE GUIDELINES #
 #Nest - best settings season.begin = "03-25", season.end = "08-20", period_length = 26
+#Chick - best settings season.begin = "05-10", season.end = "10-20", period_length = 26, behavior_signal= "3", min.occ = 16
+
+unique(predictions$b)
+
+build_matrices(RF_prediction=predictions, season.begin = "05-10", season.end = "10-20", period_length = 26, behavior_signal= "3", min.occ = 16)
+
+# for chick-tending
+matrices$mat_beh_full <-  matrices$mat_beh 
+matrices$mat_fix_full <-  matrices$mat_fix 
+
+matrices$mat_beh_full[which(rownames(matrices$mat_beh_full) %in% c("2004-2013","2020-2013","2041-2013","2012-2013","2023-2013","1008-2013","1009-2013","2017-2013","2019-2013")),]
+
+matrices$mat_beh_full[which(!rownames(matrices$mat_beh_full) %in% c("2004-2013","2020-2013","2041-2013","2012-2013","2023-2013","1008-2013","1009-2013","2017-2013","2019-2013")),]
+=======
+#on my local machine
+load("C:/Users/14064/Desktop/Local Loc/nestAutoEval/predictions/RF.Rda")
+names(predictions)[3] <- "b"
+
+predictions$b <- as.numeric(predictions$b)
+ # Aug 26, tag 2015-2013 = 101 (looked at it, every location was classified as chick tending for the entire day); April 29, 2015-2014 = 150 (this one had the same issue, plus irregular fix rates between 2-15 min, mostly 5)
+
+
+#### 8. run the function to create matrices ####
+
+# SETTINGS DESCRIPTION!! FOLLOW THESE GUIDELINES #
+#Nest - best settings season.begin = "03-25", season.end = "08-20", period_length = 26
+<<<<<<< HEAD
 #Chick - best settings season.begin = "05-10", season.end = "10-20", period_length = 26, behavior_signal= "3", min.occ = 16
 
 unique(predictions$b)
@@ -87,9 +122,24 @@ Nest_Fates$FledgingSuccess
 Nest_Fates$id
 
 fate <- Nest_Fates[ order(Nest_Fates$id),]
+>>>>>>> main
 
 check <- cbind(fate$FledgingSuccess, inferred_surv(btgo_outcomes)$outcomes)
 
+<<<<<<< HEAD
+btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, visits = matrices$mat_beh_full, model = "phi_time_p_time_indiv", mcmc_params = list(burn_in = 1000, n_chain = 3, thin = 5, n_adapt = 1000, n_iter = 3000))
+
+#inferred_surv(btgo_outcomes)
+
+Nest_Fates <- read_csv("fieldNotes/Nest_Fates_1.csv")
+
+Nest_Fates <- Nest_Fates[ which(Nest_Fates$id %in% inferred_surv(btgo_outcomes, ci = .80)$outcomes[,1]),]
+
+Nest_Fates$FledgingSuccess
+Nest_Fates$id
+
+fate <- Nest_Fates[ order(Nest_Fates$id),]
+=======
 
 
 ggplot(check) + geom_boxplot(aes(x=factor(fate$FledgingSuccess), y = pr_succ_mean), colour =  "grey40" , outlier.alpha = 0.001) + geom_point(aes(x=factor(fate$FledgingSuccess), y = pr_succ_mean), na.rm=TRUE, position=position_jitter(width=.12, height = 0), colour = "forestgreen") + theme_classic()  + labs(x = "True Fate", y = "Pr(Survival)")  + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12)) 
@@ -97,16 +147,17 @@ ggplot(check) + geom_boxplot(aes(x=factor(fate$FledgingSuccess), y = pr_succ_mea
 
 
 #build_matrices(RF_prediction=predictions, season.begin = "03-25", season.end = "08-20", period_length = 30, behavior_signal= "1")
+>>>>>>> main
 
+check <- cbind(fate$FledgingSuccess, inferred_surv(btgo_outcomes)$outcomes)
 
- matrices$mat_beh[c(1:5),c(1:10)]
- matrices$mat_fix[c(1:5),c(1:10)]
 <<<<<<< HEAD
 
 
-#subset to those with complete incubation cycles
- mat_keep_rows <- c("2015-2014", "2016-2013", "2018-2014", "2002-2014", "2002-2015") #only for nest model
+ggplot(check) + geom_boxplot(aes(x=factor(fate$FledgingSuccess), y = pr_succ_mean), colour =  "grey40" , outlier.alpha = 0.001) + geom_point(aes(x=factor(fate$FledgingSuccess), y = pr_succ_mean), na.rm=TRUE, position=position_jitter(width=.12, height = 0), colour = "forestgreen") + theme_classic()  + labs(x = "True Fate", y = "Pr(Survival)")  + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12)) 
 =======
+ matrices$mat_beh[c(1:5),c(1:10)]
+ matrices$mat_fix[c(1:5),c(1:10)]
 =======
 #Chick - best settings season.begin = "03-25", season.end = "09-20", period_length = 22
 
@@ -117,16 +168,76 @@ build_matrices(RF_prediction=predictions, season.begin = "03-25", season.end = "
 >>>>>>> f5c989594158b23ce85b7b6735cf5b506cb11a7c
 >>>>>>> main
 
+
+#subset to those with complete incubation cycles
+ mat_keep_rows <- c("2015-2014", "2016-2013", "2018-2014", "2002-2014", "2002-2015") #only for nest model
+
+<<<<<<< HEAD
+#build_matrices(RF_prediction=predictions, season.begin = "03-25", season.end = "08-20", period_length = 30, behavior_signal= "1")
+=======
+ # for nest
+<<<<<<< HEAD
+>>>>>>> main
+
+  matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
+  matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
+
+<<<<<<< HEAD
+ matrices$mat_beh[c(1:5),c(1:10)]
+ matrices$mat_fix[c(1:5),c(1:10)]
+<<<<<<< HEAD
+=======
+# for chick-tending
+  matrices$mat_beh_full <-  matrices$mat_beh 
+  matrices$mat_fix_full <-  matrices$mat_fix 
+>>>>>>> main
+
+ matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
+ matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
+
+<<<<<<< HEAD
+#subset to those with complete incubation cycles
+ mat_keep_rows <- c("2015-2014", "2016-2013", "2018-2014", "2002-2014", "2002-2015") #only for nest model
+=======
+=======
+#Chick - best settings season.begin = "03-25", season.end = "09-20", period_length = 22
+
+build_matrices(RF_prediction=predictions, season.begin = "03-25", season.end = "08-20", period_length = 30, behavior_signal= "1")
+=======
+# for chick-tending
+ matrices$mat_beh_full <-  matrices$mat_beh 
+ matrices$mat_fix_full <-  matrices$mat_fix 
+
+>>>>>>> main
+
+ matrices$mat_beh[c(1:5),c(1:10)]
+# matrices$mat_fix[c(1:5),c(1:10)]
+>>>>>>> f5c989594158b23ce85b7b6735cf5b506cb11a7c
+>>>>>>> main
+
+<<<<<<< HEAD
  # for nest
 
 <<<<<<< HEAD
   matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
   matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
+=======
+#### 9. predict survival from states ####
+btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, visits = matrices$mat_beh_full, model = "phi_time_p_time", mcmc_params = list(burn_in = 1000, n_chain = 3, thin = 5, n_adapt = 1000, n_iter = 7000)) #; inferred_surv(btgo_outcomes)
+=======
+ matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
+ matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
+
+# for chick-tending
+ # matrices$mat_beh_full <-  matrices$mat_beh 
+ # matrices$mat_fix_full <-  matrices$mat_fix 
+>>>>>>> main
 
 # for chick-tending
   matrices$mat_beh_full <-  matrices$mat_beh 
   matrices$mat_fix_full <-  matrices$mat_fix 
 
+<<<<<<< HEAD
  matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
  matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
 
@@ -301,6 +412,68 @@ Nest_Fates$FledgingSuccess
 
 out_final <- cbind(Nest_Fates, out); out_final <- out_final[ which(out_final$LastDaySeenChickGuiding != "NA"),]
 
+=======
+#### 9. predict survival from states ####
+btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, visits = matrices$mat_beh_full, model = "phi_time_p_time", mcmc_params = list(burn_in = 1000, n_chain = 3, thin = 5, n_adapt = 1000, n_iter = 5000)) #; inferred_surv(btgo_outcomes)
+>>>>>>> f5c989594158b23ce85b7b6735cf5b506cb11a7c
+
+# 
+# 
+# btgo_outcomes$z
+# 
+# 
+# 
+# #population levels
+# plot_survival(btgo_outcomes)
+# plot_detection(btgo_outcomes)
+# 
+# 
+# print(plot_nest_surv(btgo_outcomes, who = 1))
+# 
+# #print all the plots of survival 
+# for( i in c(1:5)){plot(plot_nest_surv(btgo_outcomes, who = i))}
+# 
+# # diagnostics
+# btgo_pb0_coda <- coda::as.mcmc.list(btgo_outcomes$p.b0)
+# btgo_pb1_coda <- coda::as.mcmc.list(btgo_outcomes$p.b1)
+# 
+# #looking for fuzzy caterpillars (good mixing of the 3 mcmc chains) and a simetrical distribution that fits the observed data (black dashes)
+# plot(btgo_pb0_coda); plot(btgo_pb1_coda)
+
+# 
+# #### get outcome estimate - nesting ####
+# 
+# #process data
+ surv <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,3] #this is for the boxplot, dichotemy plot
+# 
+# 
+fate <- c(24,24,24,20,24)
+pred <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,6]; pred
+# 
+print(summary(lm(fate ~ pred)))
+
+# 
+ ggplot() + geom_boxplot(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), y=surv), colour =  "grey40", outlier.alpha = 0.001) + geom_point(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), y=surv), na.rm=TRUE, position=position_jitter(width=.152, height = 0), colour = "purple3") + theme_classic()  + labs(x = "True Fate", y = "Pr(Survival|movement)")  + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12))   # 
+# 
+# 
+# 
+# 
+
+#### get outcome estimate - chick tending ####
+
+#process data
+surv <- inferred_surv(btgo_outcomes, ci = .80)$outcomes #this is for the boxplot, dichotemy plot
+out <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,c(5:7)] #for the scatterplot and line of best fit
+
+Nest_Fates <- read_csv("fieldNotes/Nest_Fates_1.csv")
+
+Nest_Fates <- Nest_Fates[ which(Nest_Fates$id %in% inferred_surv(btgo_outcomes, ci = .80)$outcomes[,1]),]
+
+Nest_Fates$FledgingSuccess
+
+out_final <- cbind(Nest_Fates, out); out_final <- out_final[ which(out_final$LastDaySeenChickGuiding != "NA"),]
+
+>>>>>>> main
 #find relationship
 print(summary(lm(last_day_mean ~ DaysBroodAlive, data = out_final)))
 <<<<<<< HEAD
@@ -312,6 +485,9 @@ ggplot(surv) + geom_boxplot(aes(x = factor(Nest_Fates$FledgingSuccess), y=pr_suc
 
 ggplot(out_final) + geom_pointrange(aes(x = DaysBroodAlive, y=last_day_mean, ymax = last_day_upr, ymin = last_day_lwr), na.rm=TRUE, position=position_jitter(width=.2, height = 0), colour = "forestgreen") + theme_classic() + labs(x = "Age at Last Field Observation", y = "Median Day Predicted Alive")  + coord_cartesian(ylim=c(0,32), xlim = c(0,36)) + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12)) + scale_x_continuous(expand = c(0,0), limits = c(-10,36), breaks = seq(0,36, by = 2)) + scale_y_continuous(expand = c(0,0), limits = c(-10,36), breaks = seq(-10,36, by = 2)) + geom_smooth(aes(x = DaysBroodAlive, y=last_day_mean), se=F, method = "lm", colour = "forestgreen")
 
+<<<<<<< HEAD
+>>>>>>> main
+=======
 >>>>>>> main
 ggplot() + geom_point(aes(y=surv$pr_succ_mean, x= Nest_Fates$FledgingSuccess)) + geom_smooth(aes(y=surv$pr_succ_mean, x= Nest_Fates$FledgingSuccess), method = "lm", se = F, colour = "black") + theme_classic()
 
