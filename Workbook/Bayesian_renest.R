@@ -32,14 +32,51 @@ setUp(c("randomForest",
 #predictions <- load("./predictions/RF.Rda")
 
 #on my local machine
-load("C:/Users/14064/Dropbox/BTGO Movmement Study/nestAutoEval/predictions/RF_FrieslandArgos.Rda")
+#load("C:/Users/14064/Dropbox/BTGO Movmement Study/nestAutoEval/predictions/RF_FrieslandArgos.Rda")
+predictions <- read.csv("./argos.csv")
+predictions <- as.data.frame(predictions %>% filter(id == c("123424-2017-att1","144433-2016-att1","144434-2017-att1","144439-2016-att1","144441-2017-att1","144443-2017-att1", "157536-2018-att1","123424-2017-att2","144433-2016-att2","144434-2017-att2","144439-2016-att2","144441-2017-att2","144443-2017-att2", "157536-2018-att2")))
+
+predictions <- predictions[,-1]
 names(predictions)[3] <- "b"
 
 predictions$b <- as.numeric(predictions$b)
+predictions$t <- as.POSIXct(predictions$t , format="%m/%d/%Y %H:%M")
  # Aug 26, tag 2015-2013 = 101 (looked at it, every location was classified as chick tending for the entire day); April 29, 2015-2014 = 150 (this one had the same issue, plus irregular fix rates between 2-15 min, mostly 5)
 
 head(predictions)
 str(predictions)
+
+unique(predictions$id)
+
+# 
+# memory.limit(size = 35000) 
+# 
+# renest <- data.frame()
+# 
+# for(i in c("123424-2017","144433-2016","144434-2017","144439-2016","144441-2017","144443-2017", "157536-2018")){
+#   tmp1 <- predictions %>% filter(id == as.character(i))
+#   for(f in 1:nrow(tmp)){ tmp <- tmp1[f,]
+#   } #f
+#   for(j in c("2017-04-29 23:00:00", "2016-04-28 23:00:00", "2017-05-03 23:00:00", "2016-05-04 23:00:00", "2017-04-21 23:00:00", "2017-05-02 23:00:00", "2018-04-18 23:00:00")){
+#     
+#     tmp$id <- if(tmp$t > as.POSIXct(j, format = "%Y-%m-%d %H:%M:%S", tz=attr(predictions$t, "tzone"))) {paste(as.character(i), "att2", sep="-")} else {
+#   paste(as.character(i), "att1", sep="-")}
+#   
+#     tmp2<- rbind(renest, tmp)
+#     renest <- rbind(renest, tmp2)
+#     }#j
+#   
+#   }#i
+# 
+# renest
+# 
+# unique(renest$id)
+# 
+# warnings()
+# 
+# d <- as.data.frame(predictions %>% group_by(id) %>% summarise(min = min(t), max = max(t)))
+# d2 <- as.data.frame(renest %>% group_by(id) %>% summarise(min = min(t), max = max(t)))
+
 #### 8. run the function to create matrices ####
 
 # SETTINGS DESCRIPTION!! FOLLOW THESE GUIDELINES #
@@ -85,7 +122,10 @@ ggplot(inferred_surv(btgo_outcomes)$outcomes) + geom_boxplot(aes(x = factor(0), 
 
 
 #NEST
-#Nest - best settings season.begin = "03-25", season.end = "08-20", period_length = 26, behavior_signal= "1", min.occ = 16
+#GSP - best settings season.begin = "03-25", season.end = "08-20", period_length = 26, behavior_signal= "1", min.occ = 16
+#Argos - season.begin = "04-01", season.end = "08-20", period_length = 26, behavior_signal= "1", min.occ = 2
+
+predictions <- as.data.frame(predictions %>% filter(id != c("123424-2017","144433-2016","144434-2017","144439-2016","144441-2017","144443-2017", "157536-2018")))
 
 build_matrices(RF_prediction=predictions, season.begin = "04-01", season.end = "08-20", period_length = 26, behavior_signal= "1", min.occ = 2)
 # 
@@ -153,6 +193,11 @@ inferred_surv(btgo_outcomes)
  plot <- right_join(true_fate,inferred_surv(btgo_outcomes, ci = .80)$outcomes, by="animal")
  
  head(plot)
+ 
+ ch <- as.data.frame(plot %>% group_by(animal) %>% count())
+ 
+ plot[plot$animal %in% c(as.vector(ch[which(ch$n == 1),1])),]
+ 
 #  
 # fate <- c(24,24,24,20,24)
 # pred <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,6]; pred
