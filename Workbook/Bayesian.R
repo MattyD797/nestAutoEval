@@ -36,7 +36,7 @@ load("C:/Users/14064/Dropbox/BTGO Movmement Study/nestAutoEval/predictions/RF_Fr
 names(predictions)[3] <- "b"
 
 predictions$b <- as.numeric(predictions$b)
- # Aug 26, tag 2015-2013 = 101 (looked at it, every location was classified as chick tending for the entire day); April 29, 2015-2014 = 150 (this one had the same issue, plus irregular fix rates between 2-15 min, mostly 5)
+# Aug 26, tag 2015-2013 = 101 (looked at it, every location was classified as chick tending for the entire day); April 29, 2015-2014 = 150 (this one had the same issue, plus irregular fix rates between 2-15 min, mostly 5)
 
 head(predictions)
 str(predictions)
@@ -87,6 +87,7 @@ ggplot(inferred_surv(btgo_outcomes)$outcomes) + geom_boxplot(aes(x = factor(0), 
 #NEST
 #Nest - best settings season.begin = "03-25", season.end = "08-20", period_length = 26, behavior_signal= "1", min.occ = 16
 
+
 build_matrices(RF_prediction=predictions, season.begin = "04-01", season.end = "08-20", period_length = 26, behavior_signal= "1", min.occ = 2)
 # 
 # 
@@ -98,6 +99,36 @@ build_matrices(RF_prediction=predictions, season.begin = "04-01", season.end = "
 #  mat_keep_rows <- c("2015-2014", "2016-2013", "2018-2014", "2002-2014", "2002-2015") #only for nest model
 # 
 #  # for nest
+
+build_matrices(RF_prediction=predictions, season.begin = "03-25", season.end = "08-20", period_length = 26, behavior_signal= "1", min.occ = 8)
+
+
+matrices$mat_beh[c(1:5),c(1:10)]
+matrices$mat_fix[c(1:5),c(1:10)]
+
+
+#subset to those with complete incubation cycles
+mat_keep_rows <- c("2015-2014", "2016-2013", "2018-2014", "2002-2014", "2002-2015") #only for nest model
+
+# for nest
+
+matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
+matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
+
+
+
+# for chick-tending
+matrices$mat_beh_full <-  matrices$mat_beh 
+matrices$mat_fix_full <-  matrices$mat_fix 
+
+matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
+matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
+
+# for chick-tending
+matrices$mat_beh_full <-  matrices$mat_beh 
+matrices$mat_fix_full <-  matrices$mat_fix 
+
+
 
   matrices$mat_beh_full <-  matrices$mat_beh#[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
   matrices$mat_fix_full <-  matrices$mat_fix#[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
@@ -137,6 +168,7 @@ inferred_surv(btgo_outcomes)
 # #### get outcome estimate - nesting ####
 # 
 # #process data
+
   
  true_fate<- read.csv("./fieldNotes/Nest_LocFate_Argos.csv")
   
@@ -147,6 +179,9 @@ inferred_surv(btgo_outcomes)
   names(true_fate)[1] <- "animal"
   
  surv <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,3] #this is for the boxplot, dichotemy plot
+
+surv <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,3] #this is for the boxplot, dichotemy plot
+
 # 
 # 
  
@@ -161,11 +196,15 @@ inferred_surv(btgo_outcomes)
 
 # 
 
+
  #argos only
 ggplot() + geom_boxplot(aes(x = NestSuccess, y = pr_succ_mean), data = plot) + geom_point(aes(x = NestSuccess, y = pr_succ_mean), data = plot, na.rm=TRUE, position=position_jitter(width=.152, height = 0), colour = "purple3") + theme_classic()
 
 #gps only
  ggplot() + geom_boxplot(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), y=surv), colour =  "grey40", outlier.alpha = 0.001) + geom_point(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), y=surv), na.rm=TRUE, position=position_jitter(width=.152, height = 0), colour = "purple3") + theme_classic()  + labs(x = "True Fate", y = "Pr(Survival|movement)")  + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12))   # 
+
+ggplot() + geom_boxplot(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), y=surv), colour =  "grey40", outlier.alpha = 0.001) + geom_point(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), y=surv), na.rm=TRUE, position=position_jitter(width=.152, height = 0), colour = "purple3") + theme_classic()  + labs(x = "True Fate", y = "Pr(Survival|movement)")  + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12))   # 
+
 # 
 # 
 # 

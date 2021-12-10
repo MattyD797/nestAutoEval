@@ -209,8 +209,8 @@
     #create dataframe for RF training
     dt_clean <- dt_tracks[which(dt_tracks$actual != nob),] %>% 
       drop_na() 
-    
-    return(dt_clean)
+    dt_list <- list(dt_tracks, dt_clean)
+    return(dt_list)
   }
   
 
@@ -218,7 +218,7 @@
 
 #Split data into training and test sets
 ##Input: cleaned data 
-  splitData <- function(dt_clean, prop, strata = NULL){
+  splitData <- function(dt_clean, prop, strata = NULL, breaks = 4){
     
     #Set random split
     set.seed(1234)
@@ -226,7 +226,8 @@
     #split the data prop train:test
     dt_split <- initial_split(dt_clean, 
                               prop = prop,
-                              strata = strata)
+                              strata = all_of(strata), 
+                              breaks = breaks)
     
     return(dt_split)
   }
