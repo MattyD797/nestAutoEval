@@ -36,7 +36,7 @@
     #locate all files in the directory
     files <- list.files(df)
     #Load all files as dfs into a list
-    myfiles <- lapply(paste0(predicted_tracks,files), get.csv) %>% 
+    myfiles <- lapply(paste0(df,files), get.csv) %>% 
       bind_rows() %>% 
       rename("ID" = 1,
              "time" = 2, 
@@ -51,15 +51,13 @@
   #Read individual track and modify to prepare for binding with rest of data
   ##Input: csv of individual bird track
     get.csv <- function(df){
-      track <- read.csv(df) %>%
-        dplyr::select(-last_col()) %>%
-        mutate(
-          ID = as.character(ID),
-          date_time = as.POSIXct(date_time, format="%m/%d/%Y %H:%M"),
-          latitude = as.numeric(latitude),
-          longitude = as.numeric(longitude),
-          b = as.numeric(b)
-        ) %>% 
+      track <- read_csv(df) %>% mutate(
+        ID = as.character(id),
+        date_time = as.POSIXct(date_time, format="%m/%d/%Y %H:%M"),
+        latitude = as.numeric(latitude),
+        longitude = as.numeric(longitude),
+        b = as.numeric(b)
+      ) %>% dplyr::select(c(ID,date_time,latitude, longitude,b))  %>% 
         suppressWarnings()
       
       return(track[!duplicated(track$date_time),])
@@ -226,7 +224,7 @@
     #split the data prop train:test
     dt_split <- initial_split(dt_clean, 
                               prop = prop,
-                              strata = all_of(strata), 
+                              strata = actual, 
                               breaks = breaks)
     
     return(dt_split)

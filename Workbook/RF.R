@@ -102,8 +102,8 @@
     add_model(rf_model)
   
   # create CV search grid #
-  
-  rf_grid <- expand.grid(mtry = c(85:90))
+  #~86 for GPS and 45 for Argos
+  rf_grid <- expand.grid(mtry = c(86))
   
   # tune mtry #
 
@@ -116,6 +116,8 @@
 
   mtry_vals <- rf_tune_results %>%
     collect_metrics()
+  
+  mtry_vals
 
   # pick the best #
   param_final <- rf_tune_results %>%
