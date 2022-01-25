@@ -32,7 +32,7 @@ setUp(c("randomForest",
 #predictions <- load("./predictions/RF.Rda")
 
 #on my local machine
-load("C:/Users/14064/Desktop/Local Loc/nestAutoEval/predictions/RF.Rda")
+load("./predictions/RF.Rda")
 names(predictions)[3] <- "b"
 
 predictions$b <- as.numeric(predictions$b)
@@ -47,24 +47,44 @@ predictions$b <- as.numeric(predictions$b)
 
 unique(predictions$b)
 
-build_matrices(RF_prediction=predictions, season.begin = "05-10", season.end = "10-20", period_length = 26, behavior_signal= "3", min.occ = 16)
+build_matrices(RF_prediction=predictions, 
+               season.begin = "05-10", 
+               season.end = "10-20", 
+               period_length = 26, 
+               behavior_signal= "3", 
+               min.occ = 16)
 
 # for chick-tending
 matrices$mat_beh_full <-  matrices$mat_beh 
 matrices$mat_fix_full <-  matrices$mat_fix 
 
-matrices$mat_beh_full[which(rownames(matrices$mat_beh_full) %in% c("2004-2013","2020-2013","2041-2013","2012-2013","2023-2013","1008-2013","1009-2013","2017-2013","2019-2013")),]
+matrices$mat_beh_full[which(rownames(matrices$mat_beh_full) %in% 
+                                    c("2004-2013","2020-2013","2041-2013",
+                                      "2012-2013","2023-2013","1008-2013",
+                                      "1009-2013","2017-2013","2019-2013")),]
 
-matrices$mat_beh_full[which(!rownames(matrices$mat_beh_full) %in% c("2004-2013","2020-2013","2041-2013","2012-2013","2023-2013","1008-2013","1009-2013","2017-2013","2019-2013")),]
+matrices$mat_beh_full[which(!rownames(matrices$mat_beh_full) %in% 
+                                    c("2004-2013","2020-2013","2041-2013",
+                                      "2012-2013","2023-2013","1008-2013",
+                                      "1009-2013","2017-2013","2019-2013")),]
 
 
-btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, visits = matrices$mat_beh_full, model = "phi_time_p_time_indiv", mcmc_params = list(burn_in = 1000, n_chain = 3, thin = 5, n_adapt = 1000, n_iter = 3000))
+btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, 
+                                       visits = matrices$mat_beh_full, 
+                                       model = "phi_time_p_time_indiv", 
+                                       mcmc_params = list(burn_in = 1000,
+                                                          n_chain = 3, 
+                                                          thin = 5, 
+                                                          n_adapt = 1000,
+                                                          n_iter = 3000))
 
 #inferred_surv(btgo_outcomes)
 
 Nest_Fates <- read_csv("fieldNotes/Nest_Fates_1.csv")
 
-Nest_Fates <- Nest_Fates[ which(Nest_Fates$id %in% inferred_surv(btgo_outcomes, ci = .80)$outcomes[,1]),]
+Nest_Fates <- Nest_Fates[ which(Nest_Fates$id %in% 
+                                        inferred_surv(btgo_outcomes, 
+                                                                 ci = .80)$outcomes[,1]),]
 
 Nest_Fates$FledgingSuccess
 Nest_Fates$id
@@ -75,14 +95,40 @@ check <- cbind(fate$FledgingSuccess, inferred_surv(btgo_outcomes)$outcomes)
 
 
 
-ggplot(check) + geom_boxplot(aes(x=factor(fate$FledgingSuccess), y = pr_succ_mean), colour =  "grey40" , outlier.alpha = 0.001) + geom_point(aes(x=factor(fate$FledgingSuccess), y = pr_succ_mean), na.rm=TRUE, position=position_jitter(width=.12, height = 0), colour = "forestgreen") + theme_classic()  + labs(x = "True Fate", y = "Pr(Survival)")  + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12)) 
+ggplot(check) + 
+        geom_boxplot(aes(x=factor(fate$FledgingSuccess), 
+                                 y = pr_succ_mean), 
+                     colour =  "grey40" , 
+                     outlier.alpha = 0.001) + 
+        geom_point(aes(x=factor(fate$FledgingSuccess), 
+                       y = pr_succ_mean), 
+                   na.rm=TRUE, 
+                   position=position_jitter(width=.12, 
+                                            height = 0), 
+                   colour = "forestgreen") + 
+        theme_classic()  + 
+        labs(x = "True Fate", 
+             y = "Pr(Survival)")  + 
+        theme(axis.text.x = element_text(colour = "grey30", 
+                                         size = 10),  
+              axis.text.y = element_text(colour = "grey30", 
+                                         size = 10), 
+              axis.title.x = element_text(colour = "grey30", 
+                                          size = 12), 
+              axis.title.y = element_text(colour = "grey30", 
+                                          size = 12)) 
 
 
 
 #NEST
 #Nest - best settings season.begin = "03-25", season.end = "08-20", period_length = 26, behavior_signal= "1", min.occ = 16
 
-build_matrices(RF_prediction=predictions, season.begin = "03-25", season.end = "08-20", period_length = 26, behavior_signal= "1", min.occ = 8)
+build_matrices(RF_prediction=predictions, 
+               season.begin = "03-25", 
+               season.end = "08-20", 
+               period_length = 26, 
+               behavior_signal= "1", 
+               min.occ = 8)
 
 
 matrices$mat_beh[c(1:5),c(1:10)]
@@ -94,8 +140,10 @@ mat_keep_rows <- c("2015-2014", "2016-2013", "2018-2014", "2002-2014", "2002-201
 
 # for nest
 
-matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
-matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
+matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% 
+                                                   mat_keep_rows, ] 
+matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% 
+                                                   mat_keep_rows, ] 
 
 
 =======
@@ -103,8 +151,10 @@ matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_k
 matrices$mat_beh_full <-  matrices$mat_beh 
 matrices$mat_fix_full <-  matrices$mat_fix 
 
-matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
-matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
+matrices$mat_beh_full <-  matrices$mat_beh[rownames(matrices$mat_beh) %in% 
+                                                   mat_keep_rows, ] 
+matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in% 
+                                                   mat_keep_rows, ] 
 
 # for chick-tending
 matrices$mat_beh_full <-  matrices$mat_beh 
@@ -114,7 +164,14 @@ matrices$mat_fix_full <-  matrices$mat_fix
 
 
 #### 9. predict survival from states ####
-btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, visits = matrices$mat_beh_full, model = "phi_time_p_time_indiv", mcmc_params = list(burn_in = 1000, n_chain = 3, thin = 5, n_adapt = 1000, n_iter = 5000)) #; inferred_surv(btgo_outcomes)
+btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, 
+                                       visits = matrices$mat_beh_full, 
+                                       model = "phi_time_p_time_indiv", 
+                                       mcmc_params = list(burn_in = 1000, 
+                                                          n_chain = 3, 
+                                                          thin = 5, 
+                                                          n_adapt = 1000, 
+                                                          n_iter = 5000)) #; inferred_surv(btgo_outcomes)
 
 # 
 # 
@@ -152,7 +209,18 @@ pred <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,6]; pred
 print(summary(lm(fate ~ pred)))
 
 # 
-ggplot() + geom_boxplot(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), y=surv), colour =  "grey40", outlier.alpha = 0.001) + geom_point(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), y=surv), na.rm=TRUE, position=position_jitter(width=.152, height = 0), colour = "purple3") + theme_classic()  + labs(x = "True Fate", y = "Pr(Survival|movement)")  + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12))   # 
+ggplot() + geom_boxplot(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), 
+                            y=surv), colour =  "grey40", outlier.alpha = 0.001) + 
+        geom_point(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), 
+                       y=surv), 
+                   na.rm=TRUE, 
+                   position=position_jitter(width=.152, height = 0), 
+                   colour = "purple3") + 
+        theme_classic()  + labs(x = "True Fate", y = "Pr(Survival|movement)")  + 
+        theme(axis.text.x = element_text(colour = "grey30", size = 10),  
+              axis.text.y = element_text(colour = "grey30", size = 10), 
+              axis.title.x = element_text(colour = "grey30", size = 12), 
+              axis.title.y = element_text(colour = "grey30", size = 12))   # 
 # 
 # 
 # 

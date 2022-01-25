@@ -27,7 +27,7 @@
 
 # 2. Load in Data for training -----------------------------------------------
 
-  tracks <- readTracks(predicted_tracks)
+  tracks <- readTracks(argos_predicted_tracks)
 
 # 3. random drop and split training data ------------------------------------------------
   tracks_split <- dropBeh(tracks, c(0,0,0,0)) %>% 
@@ -103,7 +103,7 @@
   
   # create CV search grid #
   #~86 for GPS and 45 for Argos
-  rf_grid <- expand.grid(mtry = c(86))
+  rf_grid <- expand.grid(mtry = c(5, 100, 180, 200, 280))
   
   # tune mtry #
 
@@ -157,11 +157,11 @@
 
 # Save --------------------------------------------------------------------
 
-  save(rf_fit, file = "trainModels/RF.Rda")
+  save(rf_fit, file = "trainModels/argosRF.Rda")
   
-  save(final_model, file = "finalModels/RF.Rda")
+  save(final_model, file = "finalModels/argosRF.Rda")
   
-  save(predictions, file= "predictions/RF.Rda")
+  save(predictions, file= "predictions/argosRF.Rda")
 
 
 

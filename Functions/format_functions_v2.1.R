@@ -27,7 +27,12 @@
 # avg.fix.rate=.25
 
 #### Function to construct the survival and observation matrices ####
-build_matrices <- function(RF_prediction, season.begin = "01-01", season.end = "12-31", period_length = 27, behavior_signal= "1", min.occ = 2, avg.fix.rate=.25){ 
+build_matrices <- function(RF_prediction, season.begin = "01-01", 
+                           season.end = "12-31", 
+                           period_length = 27, 
+                           behavior_signal= "1", 
+                           min.occ = 2, 
+                           avg.fix.rate=.25){ 
   
   # check input data
   # Check that all the fields are there
@@ -94,7 +99,7 @@ build_matrices <- function(RF_prediction, season.begin = "01-01", season.end = "
     fixes <- fixes[(fixes$id %in% beh$id),]
     
     #create blank matrix to fill
-    mat_fix <- matrix(NA, nrow = length(unique(fixes$id)), ncol = 365)
+    mat_fix <- matrix(NA, nrow = length(unique(fixes$id)), ncol = 366)
     
     
     for(i in 1:length(fixes$id)){
@@ -179,7 +184,8 @@ build_matrices <- function(RF_prediction, season.begin = "01-01", season.end = "
 #
 estimate_outcomes_LRW <- function(fixes,
                               visits,
-                              model = "null", jags_file_folder = "C:/Users/14064/Dropbox/BTGO Movmement Study/nestR-master/nestR-master/inst/jags",
+                              model = "null", 
+                              jags_file_folder = "./jags",
                               mcmc_params = list(burn_in = 1000,
                                                  n_chain = 2,
                                                  thin = 5,
