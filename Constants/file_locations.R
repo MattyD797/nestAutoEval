@@ -1,5 +1,6 @@
 #Annotated tracks with behavior and locations
-predicted_tracks <- "nestData/"
+gps_predicted_tracks <- "nestData/"
+argos_predicted_tracks <- "Argos_nestData/Labeled_Argos/"
 
 #Field notes
 nest_fates <- "fieldNotes/Nest_Fates.csv"
