@@ -3,7 +3,7 @@ rm(list=ls(all=TRUE))
 
 #load constants and functions
 source("Functions/standard_functions.R") 
-source("Functions/format_functions_v2.1.R")
+source("Functions/format_functions_v2.2.R")
 source("Constants/file_locations.R")
 
 #set up packages and environment ---------------------------------------
@@ -33,12 +33,14 @@ setUp(c("randomForest",
 
 #on my local machine
 load("./predictions/RF.Rda")
+
 names(predictions)[3] <- "b"
 
 predictions$b <- as.numeric(predictions$b)
 # Aug 26, tag 2015-2013 = 101 (looked at it, every location was classified as chick tending for the entire day); April 29, 2015-2014 = 150 (this one had the same issue, plus irregular fix rates between 2-15 min, mostly 5)
 
-
+head(predictions)
+str(predictions)
 #### 8. run the function to create matrices ####
 
 # SETTINGS DESCRIPTION!! FOLLOW THESE GUIDELINES #
@@ -46,6 +48,7 @@ predictions$b <- as.numeric(predictions$b)
 #Chick - best settings season.begin = "05-10", season.end = "10-20", period_length = 26, behavior_signal= "3", min.occ = 16
 
 unique(predictions$b)
+
 
 build_matrices(RF_prediction=predictions, 
                season.begin = "05-10", 
@@ -58,10 +61,6 @@ build_matrices(RF_prediction=predictions,
 matrices$mat_beh_full <-  matrices$mat_beh 
 matrices$mat_fix_full <-  matrices$mat_fix 
 
-matrices$mat_beh_full[which(rownames(matrices$mat_beh_full) %in% 
-                                    c("2004-2013","2020-2013","2041-2013",
-                                      "2012-2013","2023-2013","1008-2013",
-                                      "1009-2013","2017-2013","2019-2013")),]
 
 matrices$mat_beh_full[which(!rownames(matrices$mat_beh_full) %in% 
                                     c("2004-2013","2020-2013","2041-2013",
@@ -78,7 +77,9 @@ btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full,
                                                           n_adapt = 1000,
                                                           n_iter = 3000))
 
-#inferred_surv(btgo_outcomes)
+fixes = matrices$mat_fix_full; visits = matrices$mat_beh_full
+
+inferred_surv(btgo_outcomes)
 
 Nest_Fates <- read_csv("fieldNotes/Nest_Fates_1.csv")
 
@@ -118,16 +119,30 @@ ggplot(check) +
               axis.title.y = element_text(colour = "grey30", 
                                           size = 12)) 
 
+#Argos birds only
+ggplot(inferred_surv(btgo_outcomes)$outcomes) + geom_boxplot(aes(x = factor(0), y = pr_succ_mean), colour =  "grey40" , outlier.alpha = 0.001) + geom_point(aes(x = factor(0), y = pr_succ_mean), na.rm=TRUE, position=position_jitter(width=.12, height = 0), colour = "forestgreen") + theme_classic()  + labs(y = "Pr(Survival)")  + theme(axis.text.x = element_text(colour = "grey30", size = 10),  axis.text.y = element_text(colour = "grey30", size = 10), axis.title.x = element_text(colour = "grey30", size = 12), axis.title.y = element_text(colour = "grey30", size = 12)) 
 
 
 #NEST
 #Nest - best settings season.begin = "03-25", season.end = "08-20", period_length = 26, behavior_signal= "1", min.occ = 16
 
+build_matrices(RF_prediction=predictions, season.begin = "04-01", season.end = "08-20", period_length = 26, behavior_signal= "1", min.occ = 2)
+# 
+# 
+#  matrices$mat_beh[c(1:5),c(1:10)]
+#  matrices$mat_fix[c(1:5),c(1:10)]
+# 
+# 
+# #subset to those with complete incubation cycles
+#  mat_keep_rows <- c("2015-2014", "2016-2013", "2018-2014", "2002-2014", "2002-2015") #only for nest model
+# 
+#  # for nest
+
 build_matrices(RF_prediction=predictions, 
                season.begin = "03-25", 
                season.end = "08-20", 
                period_length = 26, 
-               behavior_signal= "1", 
+               behavior_signal= "1",
                min.occ = 8)
 
 
@@ -146,7 +161,7 @@ matrices$mat_fix_full <-  matrices$mat_fix[rownames(matrices$mat_fix) %in%
                                                    mat_keep_rows, ] 
 
 
-=======
+
 # for chick-tending
 matrices$mat_beh_full <-  matrices$mat_beh 
 matrices$mat_fix_full <-  matrices$mat_fix 
@@ -162,6 +177,10 @@ matrices$mat_fix_full <-  matrices$mat_fix
 
 
 
+  matrices$mat_beh_full <-  matrices$mat_beh#[rownames(matrices$mat_beh) %in% mat_keep_rows, ] 
+  matrices$mat_fix_full <-  matrices$mat_fix#[rownames(matrices$mat_fix) %in% mat_keep_rows, ] 
+
+fixes = matrices$mat_fix_full; visits = matrices$mat_beh_full
 
 #### 9. predict survival from states ####
 btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full, 
@@ -173,6 +192,9 @@ btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full,
                                                           n_adapt = 1000, 
                                                           n_iter = 5000)) #; inferred_surv(btgo_outcomes)
 
+inferred_surv(btgo_outcomes)  
+  
+  
 # 
 # 
 # btgo_outcomes$z
@@ -200,15 +222,34 @@ btgo_outcomes <- estimate_outcomes_LRW(fixes = matrices$mat_fix_full,
 # #### get outcome estimate - nesting ####
 # 
 # #process data
+
+  
+ true_fate<- read.csv("./fieldNotes/Nest_LocFate_Argos.csv")
+  
+  true_fate <- true_fate[,c("id", "NestSuccess")]
+  
+  head(true_fate)
+  
+  names(true_fate)[1] <- "animal"
+  
+ surv <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,3] #this is for the boxplot, dichotemy plot
+
 surv <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,3] #this is for the boxplot, dichotemy plot
-# 
-# 
-fate <- c(24,24,24,20,24)
-pred <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,6]; pred
-# 
-print(summary(lm(fate ~ pred)))
 
 # 
+# 
+ 
+ plot <- right_join(true_fate,inferred_surv(btgo_outcomes, ci = .80)$outcomes, by="animal")
+ 
+ head(plot)
+#  
+# fate <- c(24,24,24,20,24)
+# pred <- inferred_surv(btgo_outcomes, ci = .80)$outcomes[,6]; pred
+# # 
+# print(summary(lm(fate ~ pred)))
+
+# 
+
 ggplot() + geom_boxplot(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), 
                             y=surv), colour =  "grey40", outlier.alpha = 0.001) + 
         geom_point(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Hatched"), 
@@ -221,6 +262,7 @@ ggplot() + geom_boxplot(aes(x = c("Hatched", "Hatched", "Hatched", "Failed", "Ha
               axis.text.y = element_text(colour = "grey30", size = 10), 
               axis.title.x = element_text(colour = "grey30", size = 12), 
               axis.title.y = element_text(colour = "grey30", size = 12))   # 
+
 # 
 # 
 # 
