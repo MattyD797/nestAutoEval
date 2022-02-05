@@ -32,7 +32,7 @@
 
 #Concatenates all tracks into one data frame to be easily interpreted by processing scripts
 ##Input: directory to files containing predicted tracks
-  readTracks<-function(df){
+  readTracks<-function(df, minLat, minLon){
     #locate all files in the directory
     files <- list.files(df)
     #Load all files as dfs into a list
@@ -42,7 +42,9 @@
              "time" = 2, 
              "lat" = 3, 
              "lon" = 4, 
-             "b" = 5) %>% 
+             "b" = 5) %>%
+      filter(lat > minLat, 
+             lon > minLon) %>% 
       na.omit()
     
     return(myfiles)
@@ -229,3 +231,176 @@
     
     return(dt_split)
   }
+  
+  
+#createForest----------------------------------------------------------------
+  createForest<- function(pred_tracks,
+                          minLat = 50,
+                          minLon = 3,
+                          drops = c(0,0,0,0),
+                          desc = "BTGO Birds",
+                          winsize = seq(3,15,2), 
+                          idquant = seq(0,1,.25),
+                          move = c(5,10,15),
+                          prop = 8/10, 
+                          breaks = 4,
+                          nob = -1,
+                          ntrees = 1000,
+                          mtry = c(50, 100, 200, 250)
+  ){
+    #packages and setup--------------------------------------------------------
+    
+    #load in packages
+    setUp(c("randomForest", 
+            "m2b", 
+            "moveHMM", 
+            "momentuHMM", 
+            "dplyr",
+            "tidyverse", 
+            "caret",
+            "mlbench", 
+            "nestr", 
+            "coda", 
+            "jagsUI", 
+            "R2jags", 
+            "runjags", 
+            "rjags", 
+            "tidymodels"))
+    
+    # Load Data----------------------------------------------------------------------------
+    tracks <- readTracks(pred_tracks, minLat, minLon)
+    
+    # Drop Preperation -------------------------------------------------------------
+    tracks_split <- dropBeh(tracks, drops) %>% 
+      group_split(ID)
+    
+    j<- 1
+    tracks_split2 <- list()
+    for (i in tracks_split){
+      if (nrow(i)>move[3]){
+        tracks_split2[[j]] <- i
+        j <- j+1
+      }
+    }
+    
+    #xytb-------------------------------------------------------------------------
+    xytbs <- lapply(tracks_split2, 
+                    tracks2xytb, 
+                    desc=desc, 
+                    winsize=winsize, 
+                    idquant=idquant,
+                    move=move)
+    xytb <- bindXytbs(xytbs, tracks)
+    
+    #Training Frame--------------------------------------------------------------
+    dt_list <- xytb2RF(xytb, nob)
+    
+    dt_tracks <- dt_list[[1]]
+    dt_clean <- dt_list[[2]]
+    
+    #Tidymodels workflow-------------------------------------------------------------
+    # split data #
+    
+    dt_split <- splitData(dt_clean, prop, "actual", breaks = breaks)
+    
+    # define train and test set #
+    
+    dt_train <- training(dt_split)
+    dt_test <- testing(dt_split)
+    
+    # specify cross validation data #
+    
+    dt_cv <- vfold_cv(dt_train)
+    
+    # define recipe #
+    
+    dt_recipe <- 
+      recipe(dt_clean) %>%
+      update_role(everything()) %>% 
+      update_role(actual, new_role = "outcome") %>% 
+      step_corr(all_predictors()) %>% 
+      step_center(all_predictors(), -all_outcomes()) %>% 
+      step_scale(all_predictors(), -all_outcomes())%>%
+      prep()
+    
+    # define model #
+    
+    rf_model <- 
+      # specify that the model is a random forest
+      rand_forest() %>%
+      # specify that the `mtry` parameter needs to be tuned
+      set_args(mtry = tune(), ntrees = ntrees) %>%
+      # select the engine/package that underlies the model
+      set_engine("randomForest", importance = TRUE) %>%
+      # choose either the continuous regression or classification
+      set_mode("classification")
+    
+    # setup work flow ~ recipe and model#
+    
+    rf_workflow <- workflow() %>%
+      # add the recipe
+      add_recipe(dt_recipe) %>%
+      # add the model
+      add_model(rf_model)
+    
+    # create CV search grid #
+    #~86 for GPS and 45 for Argos
+    rf_grid <- expand.grid(mtry = mtry)
+    
+    
+    print("Training model (may take time)...")
+    
+    # tune mtry #
+    rf_tune_results <- rf_workflow %>%
+      tune_grid(resamples = dt_cv, #CV object
+                grid = rf_grid, # grid of values to try
+                metrics = metric_set(yardstick::f_meas))
+    
+    # collect metrics #
+    
+    mtry_vals <- rf_tune_results %>%
+      collect_metrics()
+    
+    mtry_vals
+    
+    # pick the best #
+    param_final <- rf_tune_results %>%
+      select_best(metric = "f_meas")
+    
+    # finalize workflow #
+    
+    rf_workflow <- rf_workflow %>%
+      finalize_workflow(param_final)
+    
+    #Evaluate model---------------------------------------------------------------
+    rf_fit <- rf_workflow %>%
+      # fit on the training set and evaluate on test set
+      last_fit(dt_split)
+    
+    # collect metrics and confusion chart #
+    test_metrics <- rf_fit %>% collect_metrics()
+    test_metrics
+    test_predictions <- rf_fit %>% collect_predictions()
+    f1 <- f_meas(test_predictions, actual, .pred_class)
+    acc <- accuracy(test_predictions, actual, .pred_class)
+    prec <- precision(test_predictions, actual, .pred_class)
+    rec <- recall(test_predictions, actual, .pred_class)
+    confm <- conf_mat(test_predictions, actual, .pred_class)
+    
+    all_metrics <- list(f1, acc, prec, rec, confm)
+    
+    #Final Model------------------------------------------------------------------
+    final_model <- fit(rf_workflow, dt_clean)
+    
+    #Predict Tracks---------------------------------------------------------------
+    rowsNA <- which(is.na(dt_tracks), arr.ind=TRUE)[,1] %>%  unique()
+    predictionsRF <- predict(final_model, dt_tracks %>% na.omit())
+    predictions <- cbind(xytb@b[-rowsNA, c("id", "t")], predictionsRF) %>% 
+      rename(b = .pred_class)
+    
+    return(list(final_model, predictions, all_metrics))
+  }
+  
+  
+  
+  

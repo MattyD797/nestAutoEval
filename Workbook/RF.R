@@ -16,7 +16,7 @@
           "tidyverse", 
           "caret",
           "mlbench", 
-          "nestR", 
+          "nestr", 
           "coda", 
           "jagsUI", 
           "R2jags", 
@@ -27,20 +27,29 @@
 
 # 2. Load in Data for training -----------------------------------------------
 
-  tracks <- readTracks(argos_predicted_tracks)
+  tracks <- readTracks(argos_predicted_tracks, 50, 3)
 
 # 3. random drop and split training data ------------------------------------------------
   tracks_split <- dropBeh(tracks, c(0,0,0,0)) %>% 
     group_split(ID)
+  j<- 1
+  tracks_split2 <- list()
+  for (i in tracks_split){
+    if (nrow(i)>move[3]){
+      tracks_split2[[j]] <- i
+      j <- j+1
+    }
+  }
+    
 
 # 4. Create a xytb object for each track ------------------------------
 
-  xytbs <- lapply(tracks_split, 
+  xytbs <- lapply(tracks_split2, 
                   tracks2xytb, 
                   desc="BTGO Birds", 
                   winsize=seq(3,15,2), 
-                  idquant=seq(0,1,.25),
-                  move=c(5,10,15))
+                  idquant=seq(0,1,0.25),
+                  move=c(1,3,5,7,9,11,13,15))
 
 # 5. Combine xytb objects -------------------------------------------------
 
@@ -103,7 +112,7 @@
   
   # create CV search grid #
   #~86 for GPS and 45 for Argos
-  rf_grid <- expand.grid(mtry = c(5, 100, 180, 200, 280))
+  rf_grid <- expand.grid(mtry = c(50, 100, 150, 200, 250))
   
   # tune mtry #
 
