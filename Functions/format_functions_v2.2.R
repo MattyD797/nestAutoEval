@@ -380,3 +380,31 @@ inferred_surv <- function(mcmc_object, animals = fixes, ci = 0.95){
   return(out)
   
 }
+
+
+DelineateNestAttempts <- function(tracks = lapwingpred, RenestInfo = vava_renest, DaysBeforeRenestPoss = 5){
+  
+  renesters <- tracks %>% filter(id %in% RenestInfo$id) %>% arrange(id)
+  unique(renesters$id)
+  
+  single <- tracks %>% filter(!id %in% unique(renesters$id))
+  
+  
+  lst <- list(length(unique(renesters$id)),NA)
+  for(i in 1:length(unique(renesters$id))){
+    x <- as.vector(unique(renesters$id)[i])
+    renestdata <- vava_renest %>% arrange(id) %>%  filter(id == x)
+    data <- lapwingpred %>% filter(format(t,"%Y") == renestdata$year)
+    tmp <- data %>% filter(id == x)
+    tmp1 <- tmp %>% filter(t < renestdata$second_nest_start - DaysBeforeRenestPoss)
+    tmp1$id <- paste(tmp1$id,"_1",sep="")
+    tmp2 <- tmp %>% filter(t >= renestdata$second_nest_start - DaysBeforeRenestPoss)
+    tmp2$id <- paste(tmp2$id,"_2",sep="")
+    dat <- rbind(tmp1,tmp2)
+    lst[[i]] <- dat
+  }
+  
+  lapwing_re <- as.data.frame(do.call(rbind, lst))
+  lapwingdata_fin <- rbind(lapwing_re,single)
+  tracks <<- lapwingdata_fin %>% arrange(id)
+}
