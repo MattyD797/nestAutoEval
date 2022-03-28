@@ -419,7 +419,10 @@
   graphBeh <- function(track, ids=tracks[1,1]){
     test_track <- track[track$id==ids,]
     test_xts <- xts(test_track, order.by = test_track$t, tzone = )
-    graph <- dygraph(test_xts, xlab = "time", ylab = "behavior") %>% dyOptions(stepPlot = TRUE)
+    graph <- dygraph(test_xts, xlab = "time", ylab = "behavior") %>% 
+      dyOptions(stepPlot = TRUE) %>% 
+      dyRangeSelector() %>% 
+      dyAxis("y", )
     return(graph)
   }
 
