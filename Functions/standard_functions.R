@@ -37,7 +37,7 @@
     files <- list.files(df)
     #Load all files as dfs into a list
     myfiles <- lapply(paste0(df,files), get.csv) %>% 
-      bind_rows() %>% 
+      dplyr::bind_rows() %>% 
       rename("ID" = 1,
              "time" = 2, 
              "lat" = 3, 
@@ -53,7 +53,16 @@
   #Read individual track and modify to prepare for binding with rest of data
   ##Input: csv of individual bird track
     get.csv <- function(df){
-      track <- read_csv(df) %>% mutate(
+      track <- read_csv(df) 
+      
+      if("ID" %in% colnames(track)){
+        colnames(track)[which(colnames(track)=="ID")] <- "id"
+      }
+      if("timestamp" %in% colnames(track)){
+        colnames(track)[which(colnames(track)=="timestamp")] <- "date_time"
+      }
+      
+      track <- track %>% mutate(
         ID = as.character(id),
         date_time = as.POSIXct(date_time, format="%m/%d/%Y %H:%M"),
         latitude = as.numeric(latitude),
@@ -268,7 +277,12 @@
             "tidymodels"))
     
     # Load Data----------------------------------------------------------------------------
-    tracks <- readTracks(pred_tracks, minLat, minLon)
+    tracks <- data.frame()
+    
+    for(val in pred_tracks){
+      tracks <- rbind(tracks,readTracks(val, minLat, minLon))
+    }
+    
     
     # Drop Preperation -------------------------------------------------------------
     tracks_split <- dropBeh(tracks, drops) %>% 
@@ -401,6 +415,60 @@
     return(list(final_model, predictions, all_metrics))
   }
   
-  
-  
+#GraphBeh--------------------------------------------------------------- 
+  graphBeh <- function(track, ids=tracks[1,1]){
+    test_track <- track[track$id==ids,]
+    test_xts <- xts(test_track, order.by = test_track$t, tzone = )
+    graph <- dygraph(test_xts, xlab = "time", ylab = "behavior") %>% dyOptions(stepPlot = TRUE)
+    return(graph)
+  }
+
+#makePredictions---------------------------------------------------------------
+  makePredictions <- function(model, dir, minLat = 50, minLon = 3, desc = "BTGO Birds",
+                              winsize = seq(3,15,2), 
+                              idquant = seq(0,1,.25),
+                              move = c(5,10,15), 
+                              nob = -1){
+    
+    #split tracks by ID for xytb object transformation
+    splitTracks <- readTracks(dir, minLat, minLon) %>% 
+      group_split(ID)
+    
+    #remove tracks with less than window size
+    #advisable to be the same size used to train model
+    j<- 1
+    test2 <- list()
+    for (i in splitTracks){
+      if(nrow(i)>move[3]){
+        test2[[j]] <- i
+        j <- j+1
+      }
+    }
+    
+    #create xytb objects
+    xytbs <- lapply(test2, 
+                    tracks2xytb, 
+                    desc=desc, 
+                    winsize=winsize, 
+                    idquant=idquant,
+                    move=move)
+    
+    #bind into one xytb object
+    xytb <- bindXytbs(xytbs, tracks)
+    
+    #filter out parameters
+    dt_tracks <- cbind(xytb@b$b, xytb@befdxyt)
+    colnames(dt_tracks)[1] <- "actual"
+    
+    #make predictions
+    predictionsT <- predict(model, dt_tracks %>% na.omit())
+    
+    rowsNA <- which(is.na(dt_tracks), arr.ind=TRUE)[,1] %>%  unique()
+    
+    predictions <- cbind(xytb@b[-rowsNA, c("id", "t")], predictionsT) %>% 
+      rename(b = .pred_class)
+    
+    return(predictions)
+    
+  }
   
